@@ -211,7 +211,8 @@ class Portfolio(object):
         total_return = self.equity_curve['equity_curve'][-1]
         returns = self.equity_curve['returns']
         pnl = self.equity_curve['equity_curve']
-        sharpe_ratio = create_sharpe_ratio(returns, periods=252 * 60 * 6.5)
+        # sharpe_ratio = create_sharpe_ratio(returns, periods=252 * 60 * 6.5)
+        sharpe_ratio = create_sharpe_ratio(returns, periods=252)
         drawdown, max_dd, dd_duration = create_drawdowns(pnl)
         self.equity_curve['drawdown'] = drawdown
         stats = [("Total Return", "%0.2f%%" % \

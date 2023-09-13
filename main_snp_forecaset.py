@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
-
+import numpy as np
 from sklearn.svm import SVC
 
 from strategy import Strategy
@@ -47,21 +47,22 @@ class SPYDailyForecastStrategy(Strategy):
         # Use the prior two days of returns as predictor # values, with direction as the response
         # X = snpret[["Lag1", "Lag2"]]
         X = snpret[["Lag1", "Lag2", "Lag3", "Lag4", "Lag5"]]
+        # X = snpret[["Lag1", "Lag2"]]
 
         y = snpret["Direction"]
         # Create training and test sets
         start_test = self.model_start_test_date
         X_train = X[X.index < start_test]
-        X_train = X_train.to_numpy()
+        X_train = np.flip(X_train.to_numpy(),axis= 1)
         X_test = X[X.index >= start_test]
-        X_test=  X_test.to_numpy()
+        X_test=  np.flip(X_test.to_numpy(), axis = 1)
         y_train = y[y.index < start_test]
         y_train = y_train.to_numpy()
         y_test = y[y.index >= start_test]
         y_test = y_test.to_numpy()
-        model = QDA()
+        # model = QDA()
         # model = LDA()
-        # model = SVC()
+        model = SVC(kernel = 'linear')
         # model = LogisticRegression()
         model.fit(X_train, y_train)
         return model
@@ -82,8 +83,8 @@ class SPYDailyForecastStrategy(Strategy):
                 # lags_norm = pd.DataFrame({'Lag1': [lags[1]],
                 #                           'Lag2':[lags[2]] ,'Lag3':[lags[3]] ,'Lag4': [lags[4]],'Lag5': [lags[5]]})
                 lags_norm = pd.DataFrame({'Lags': [lags[0], lags[1], lags[2], lags[3],
-                                                   lags[4], lags[5], lags[5]]}).pct_change() * 100
-                lags_norm.loc[0, 'Lags'] = 0.01
+                                                   lags[4], lags[5]]}).pct_change() * 100
+                # lags_norm.loc[0, 'Lags'] = 0.01
 
                 # pred_series = pd.Series(
                 # {
