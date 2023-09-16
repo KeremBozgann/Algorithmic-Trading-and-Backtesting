@@ -62,7 +62,7 @@ class SPYDailyForecastStrategy(Strategy):
         y_test = y_test.to_numpy()
         # model = QDA()
         # model = LDA()
-        model = SVC(kernel = 'linear')
+        model = SVC()
         # model = LogisticRegression()
         model.fit(X_train, y_train)
         return model
