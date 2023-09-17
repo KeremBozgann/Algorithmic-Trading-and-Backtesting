@@ -61,8 +61,8 @@ class SPYDailyForecastStrategy(Strategy):
         y_test = y[y.index >= start_test]
         y_test = y_test.to_numpy()
         # model = QDA()
-        # model = LDA()
-        model = SVC()
+        model = LDA()
+        # model = SVC()
         # model = LogisticRegression()
         model.fit(X_train, y_train)
         return model
@@ -117,6 +117,7 @@ class SPYDailyForecastStrategy(Strategy):
                     self.events.put(signal)
 
 
+
 if __name__ == "__main__":
     csv_dir = 'data'  # CHANGE THIS!
     symbol_list = ['SPY']
@@ -129,3 +130,17 @@ if __name__ == "__main__":
     )
     backtest.simulate_trading()
 
+def run_snp_forecast(symbol_list, initial_capital, trade_volume):
+    csv_dir = 'data'  # CHANGE THIS!
+    # symbol_list = ['SPY']
+    # initial_capital = 100000.0
+
+    heartbeat = 0.0
+    start_date = datetime.datetime(2006, 1, 3)
+    backtest = Backtest(
+        csv_dir, symbol_list, initial_capital, heartbeat,
+        start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy
+    )
+    total_gain , returns, equity_curve, drawdown = backtest.simulate_trading(trade_volume)
+
+    return total_gain, returns, equity_curve, drawdown

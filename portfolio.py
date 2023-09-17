@@ -157,7 +157,7 @@ class Portfolio(object):
             self.update_positions_from_fill(event)
             self.update_holdings_from_fill(event)
 
-    def generate_naive_order(self, signal):
+    def generate_naive_order(self, signal, trade_volume):
         """
         Simply files an Order object as a constant quantity
         sizing of the signal object, without risk management or
@@ -169,7 +169,7 @@ class Portfolio(object):
         symbol = signal.symbol
         direction = signal.signal_type
         strength = signal.strength
-        mkt_quantity = 100
+        mkt_quantity = trade_volume
         cur_quantity = self.current_positions[symbol]
         order_type = 'MKT'
         if direction == 'LONG' and cur_quantity == 0:
@@ -183,13 +183,13 @@ class Portfolio(object):
         return order
 
 
-    def update_signal(self, event):
+    def update_signal(self, event, trade_volume):
         """
             Acts on a SignalEvent to generate new orders
           based on the portfolio logic. """
 
         if event.type == 'SIGNAL':
-            order_event = self.generate_naive_order(event)
+            order_event = self.generate_naive_order(event, trade_volume  = trade_volume)
             self.events.put(order_event)
 
     def create_equity_curve_dataframe(self):
@@ -222,4 +222,4 @@ class Portfolio(object):
                  ("Drawdown Duration", "%d" % dd_duration)]
 
         self.equity_curve.to_csv('equity.csv')
-        return stats
+        return stats, self.equity_curve['returns'], self.equity_curve['equity_curve'], max_dd

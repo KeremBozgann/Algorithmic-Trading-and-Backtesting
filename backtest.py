@@ -61,7 +61,7 @@ class Backtest(object):
                                             self.initial_capital)
         self.execution_handler = self.execution_handler_cls(self.events)
 
-    def _run_backtest(self):
+    def _run_backtest(self, trade_volume):
         """
         Executes the backtest. """
 
@@ -87,7 +87,7 @@ class Backtest(object):
                             self.portfolio.update_timeindex(event)
                         elif event.type == 'SIGNAL':
                             self.signals += 1
-                            self.portfolio.update_signal(event)
+                            self.portfolio.update_signal(event, trade_volume)
                         elif event.type == 'ORDER':
                             self.orders += 1
                             self.execution_handler.execute_order(event)
@@ -98,12 +98,13 @@ class Backtest(object):
 
             time.sleep(self.heartbeat)
 
+
     def _output_performance(self):
         """
             Outputs the strategy performance from the backtest. """
 
         print("Creating summary stats...")
-        stats = self.portfolio.output_summary_stats()
+        stats, returns , equity_curve, drawdown= self.portfolio.output_summary_stats()
         print("Creating equity curve...")
         print(self.portfolio.equity_curve.tail(10))
         pprint.pprint(stats)
@@ -111,10 +112,12 @@ class Backtest(object):
         print("Signals: %s" % self.signals)
         print("Orders: %s" % self.orders)
         print("Fills: %s" % self.fills)
+        return stats, returns, equity_curve, drawdown
 
-    def simulate_trading(self):
+    def simulate_trading(self,trade_volume):
         """
         Simulates the backtest and outputs portfolio performance. """
 
-        self._run_backtest()
-        self._output_performance()
+        self._run_backtest(trade_volume)
+        stats, returns , equity_curve, drawdown= self._output_performance()
+        return stats[0], returns, equity_curve, drawdown

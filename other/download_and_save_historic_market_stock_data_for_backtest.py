@@ -11,9 +11,9 @@ def get_and_save_data(tick, start_date, end_date):
     print(yf_data.head())
     yf_data.to_csv(f'../data/{tick}.csv', index=False)
 
-# tick = 'AAPL'
-tick = 'SPY'
+tick = 'GOOGL'
+# tick = 'SPY'
 
 start_date = "2006-01-01"
-end_date= "2014-10-09"
+end_date= "2023-01-01"
 get_and_save_data(tick, start_date, end_date)
