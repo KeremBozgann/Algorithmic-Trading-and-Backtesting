@@ -1,0 +1,70 @@
+To do: 
+Plot different risk results
+
+       
+Commission cost: 
+ full_cost = 1.3
+        if self.quantity <= 500:
+            full_cost = max(1.3, 0.013 * self.quantity)
+        else:  # Greater than 500
+            full_cost = max(1.3, 0.008 * self.quantity)
+        return full_cost
+
+
+- commission cost 
+
+- 
+
+- future ideas: make it into a social app (shares.io) , in this hackhaton I worked on the backend. 
+
+- implement some middle term strategy (looking 2-3 weeks) to decide whether stock is going down or up. 
+
+- make it more accessible by giving more details on how the stocks are selected () 
+
+- people cannot compete with the large corporations when they manually adjust their portfolio
+
+- 
+
+- try it on losing companies. Is loss amplified when algorithmic trading is used? I don't think so. I actually think that it would reduce the losses and outperform the index itself. But still, check it to be sure. 
+
+- portfolio construction with long term analysis
+Weight * estimated increase * 
+
+
+
+## Inspiration
+Machines has speed, they can quickly evaluate the data to make buy/sell decisions. Lift the decision making burden out of humans shoulder so they do not have to constantly monitor their own portfolio, everyday  and make hundreds of buy/sell decisions daily. Besides people can sometimes be greedy  and they often succumb to their emotions, clouding their judgements, forcing them to make incorrect decisions. So we can make a really good case for the argument that algorithms can be better decision makers than an average homo-sapien when it comes to asset management. 
+## What it does
+Algorithmic trading: Automize your day-trading (with supercharged returns) 
+## How we built it
+Alpha model: Based on past data, uses machine learning to predict the stock price movement. Then this can be leveraged in its decision making process. 
+Portfolio model: Decision maker. Allocates the money, leverages predictions that comes from alpha model to make buy/sell decisions with the goal of maximizing returns. 
+Event-driven backtest environment: Test the model. 
+## Challenges we ran into
+- Had to wait in line for 1 hour to get dinner. But otherwise, I love this project and I am interested in this type of project, so no challenges for me except these: 
+        - Connecting all 3 different fundamental components of our algorithm together: namely alpha model, portfolio model, and backtest simulation environment. We opted for an event-driven backtester. 
+         - Finding free finance data. Really wanted to get my hands on the minutely past data but it is non-existing (only sold with exorbitant prices) . So just used EOD (End of Day) of Yahoo finance. It served me good enough. 
+        - Many, many many debugging.
+   
+
+
+
+
+
+
+
+
+## Accomplishments that we're proud of
+- Outperform SPY ETF index by algorithmic trading on SPY ETF index itself!  
+- Make finance be accessible to people who now nothing about finance by providing them such automized algorithmic solutions. Well, people will never reach the adaptivity/speed of algorithms. An algorithm can place orders every milisecond, how long does it take for a human to click the buy button on Robinboots (imaginary trading platform), let alone think and decide on which stock to buy?   
+- Customizable risk tolerance. Man, if you do not want to take too much risks, and satisfied with moderate returns, and don't wanna see those nasty, large drawdowns, just be our guest! 
+
+
+## What we learned
+
+## What's next for FinHacks
+- Make trading social! Let people share their favorite trading algorithm(s) with their friends online, in a Twitter (now X) like social platform. Let them share their equity chart and make their friends envious with their gains! 
+
+- Although we considered only 1, there are gazillions of trading algorithms and different strategies out there.  Make a library of them. People can choose whichever they want, and test it. High level, intuitive user customization (such as specifying their risk tolerance via a slidebar, which we did in this hackhaton). 
+
+

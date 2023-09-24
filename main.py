@@ -6,7 +6,7 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 import matplotlib.pyplot as plt
 import numpy as np
-from main_snp_forecaset import run_snp_forecast
+from alpha import run_snp_forecast
 from matplotlib.ticker import MaxNLocator
 
 
@@ -64,6 +64,11 @@ class RiskLevelApp(App):
         self.layout.add_widget(self.volume)
 
 
+        # Result Label
+        self.lowest = Label(text='', size_hint_y=None, height=100)
+        self.layout.add_widget(self.lowest)
+
+
         return self.layout
 
     def get_risk_symbols_and_capital(self, instance):
@@ -76,23 +81,42 @@ class RiskLevelApp(App):
 
         print('selected risk, ', self.selected_risk)
 
-        trade_volume = 100 + (500 - 100)/100 *  self.selected_risk
+        trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk
         total_gain, returns, equity_curve, drawdown = run_snp_forecast(self.stock_symbols, self.initial_capital, round(trade_volume))
         returns_numpy = returns.to_numpy()
         equity_curve_numpy = equity_curve.to_numpy()
 
+        equity_curve_zero_mean = (equity_curve_numpy - 1)[1:]
+
+
         # Update the result_label with the total_gain
         self.result_label.text = f"Total Gain: {total_gain[1]}"
-        self.drawdown.text = f"Drawdown: {round(drawdown * 100, 2)}"
+        self.drawdown.text = f"Drawdown: {round(drawdown * 100, 2)}%"
         self.volume.text=  f"Trade Volume: {round(trade_volume)}"
+        self.lowest.text=  f"Lowest Equity: {round(np.min(equity_curve_zero_mean * 100))}%"
+
+        import pandas as pd
+        import matplotlib.pyplot as plt
+
+        # Assuming 'equity_curve_numpy' is already defined
+        # Assuming 'spy_close' is defined and loaded from the CSV file
+
+        df = pd.read_csv('data/SPY.csv')
+        spy_close = df['adj_close'].to_numpy()
+
+        spy_close_norm= (spy_close - spy_close[0])/spy_close[0]
+
+        fig, ax = plt.subplots(figsize=(6, 4))  # Fix: Use plt.subplots instead of plt.figure
+        ax.plot((equity_curve_numpy - 1) * 100, label="Algo")  # Add legend labels
+        ax.plot((spy_close_norm ) * 100, label="AAPL")  # Plot SPY data
 
 
 
-        plt.figure(figsize=(6, 4))
-        plt.plot((equity_curve_numpy - 1) * 100)
-        plt.xlabel('Time')
-        plt.ylabel('Equity Curve (%)')
-        plt.title('Equity Curve Over Time')
+        plt.xlabel('Time (Days)')
+        plt.ylabel('Equity Curves (%)')
+        plt.title('Equity Curve Over Time: Algo vs. SPY')
+        plt.legend()  # Include legend
+        plt.show()
 
         # plt.xticks(xticks)
         # plt.xticklabels(xticklabels)

@@ -1,3 +1,8 @@
 
 
 Train neural network with noise removed data (using Smooth curves that smoothes out market data, you saw such curve fitting in webull app)
+
+
+- What about predicting a probability distribution on the next stock price? 
+
+- Allow manual buy in the algorithm. Person comes and manually enters a stock symbol and the amount of stocks she wants to buy, algorithm places the order and updates its portfolio accordingly. 
