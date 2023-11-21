@@ -6,3 +6,21 @@ Train neural network with noise removed data (using Smooth curves that smoothes 
 - What about predicting a probability distribution on the next stock price? 
 
 - Allow manual buy in the algorithm. Person comes and manually enters a stock symbol and the amount of stocks she wants to buy, algorithm places the order and updates its portfolio accordingly. 
+
+
+SPEAK YOUR CODE: Speak your python, java code, empowered by ChatGPT. 
+
+
+APP WITH GURKIRAT: 
+
+CHATGPT+ ALGORITHMIC TRADING FOR CUSTOMERS + SHARES 
+Note that Shares is not in the US. If any one of you have work visa, he can do this (I mean he can legally sell the app in the US). The only problem with creating an app is that we cannot legally sell it in the US, so what is the point of doing it? I do not know if this idea would hold anywhere else? Would this hold in India or Turkey?  Maybe I can take 6 months off to go to Turkey and start this business, once we have a good product. 
+
+
+
+
+Hackathon ideas: 
+	- An advanced search tool for PDF search. 
+		- Highlight the part that enclosed in []. 
+		- Leverage chatGPT for finding close matches for the search phrase 
+		- "" gives a hard search (exact phrase should be included), whereas include a '' option for soft search, that 			displays phrases that are similar to that search phrase or have similar semantic meaning to them 

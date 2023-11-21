@@ -101,20 +101,20 @@ class RiskLevelApp(App):
         # Assuming 'equity_curve_numpy' is already defined
         # Assuming 'spy_close' is defined and loaded from the CSV file
 
-        df = pd.read_csv('data/SPY.csv')
-        spy_close = df['adj_close'].to_numpy()
+        df = pd.read_csv(f'data/{self.stock_symbols[0]}.csv')
+        stock_close = df['adj_close'].to_numpy()
 
-        spy_close_norm= (spy_close - spy_close[0])/spy_close[0]
+        stock_close_norm= (stock_close - stock_close[0])/stock_close[0]
 
         fig, ax = plt.subplots(figsize=(6, 4))  # Fix: Use plt.subplots instead of plt.figure
         ax.plot((equity_curve_numpy - 1) * 100, label="Algo")  # Add legend labels
-        ax.plot((spy_close_norm ) * 100, label="AAPL")  # Plot SPY data
+        ax.plot((stock_close_norm ) * 100, label=f"{self.stock_symbols[0]}")  # Plot SPY data
 
 
 
         plt.xlabel('Time (Days)')
         plt.ylabel('Equity Curves (%)')
-        plt.title('Equity Curve Over Time: Algo vs. SPY')
+        plt.title(f'Equity Curve Over Time: Algo vs. {self.stock_symbols[0]}')
         plt.legend()  # Include legend
         plt.show()
 
