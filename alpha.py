@@ -19,13 +19,19 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 # snp_forecast.py
+
+from sklearn.ensemble import BaggingClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+
+
 class SPYDailyForecastStrategy(Strategy):
     """
     S&P500 forecast strategy. It uses a Quadratic Discriminant Analyser to predict
     the returns for a subsequent time period and then generated long/exit signals based on the prediction.
     """
 
-    def __init__(self, bars, events):
+    def __init__(self, bars, events, model_name):
         self.bars = bars
 
         self.symbol_list = self.bars.symbol_list
@@ -37,6 +43,7 @@ class SPYDailyForecastStrategy(Strategy):
         self.long_market = False
         self.short_market = False
         self.bar_index = 0
+        self.model_name = model_name
         self.model = self.create_symbol_forecast_model()
 
     def create_symbol_forecast_model(self):
@@ -61,8 +68,15 @@ class SPYDailyForecastStrategy(Strategy):
         y_train = y_train.to_numpy()
         y_test = y[y.index >= start_test]
         y_test = y_test.to_numpy()
-        # model = QDA()
-        model = LDA()
+
+        if self.model_name == "QDA":
+            model = QDA()
+        elif self.model_name == "LDA":
+            model = LDA()
+        elif self.model_name == "LDA_BAGG":
+            lda = LDA()
+            model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+
         # model = SVC()
         # model = LogisticRegression()
         model.fit(X_train, y_train)
@@ -275,7 +289,7 @@ if __name__ == "__main__":
     )
     backtest.simulate_trading()
 
-def run_snp_forecast(symbol_list, initial_capital, trade_volume):
+def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name):
     csv_dir = 'data'  # CHANGE THIS!
     # symbol_list = ['SPY']
     # initial_capital = 100000.0
@@ -286,7 +300,7 @@ def run_snp_forecast(symbol_list, initial_capital, trade_volume):
     start_date = datetime.datetime(start_year, 1, 3)
     backtest = Backtest(
         csv_dir, symbol_list, initial_capital, heartbeat,
-        start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy
+        start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy, model_name
     )
     total_gain , returns, equity_curve, drawdown = backtest.simulate_trading(trade_volume)
 

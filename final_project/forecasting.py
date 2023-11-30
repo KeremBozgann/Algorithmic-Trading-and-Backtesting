@@ -11,6 +11,8 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+# from sklearn.utils import MovingAverage
 
 
 def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
@@ -76,7 +78,7 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 
 # lags: number of days we look before the day we want to make a prediction
-lags = 5
+lags = 10
 
 # train, validation, test data split ratios
 train_ratio = 0.6
@@ -84,21 +86,27 @@ val_ratio = 0.2
 test_ratio = 0.2
 
 # symbol: stock symbol
-symbol = "AAPL"
+symbol = "SPY"
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
 
 
 # your model goes here.
 model = QDA()
+
+
 # model = LDA()
 # model = SVC()
 # model = LogisticRegression()
 
 model.fit(X_train, y_train)
 y_val_pred =model.predict(X_val)
-
 print("accuracy score", accuracy_score(y_val_pred, y_val))
+
+
+#confusion matrix:
+matrix = confusion_matrix(y_val, y_val_pred)
+print(matrix.diagonal()/matrix.sum(axis=1))
 
 
 

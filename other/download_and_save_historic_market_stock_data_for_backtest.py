@@ -8,13 +8,16 @@ def get_and_save_data(tick, start_date, end_date):
     yf_data['Date'] = yf_data['Date'].dt.strftime('%Y/%m/%d')
     yf_data = yf_data.rename(columns={'Volume': 'volume', 'Open': 'open', 'High':'high', 'Low': 'low','Close':'close',
                                       'Adj Close': 'adj_close', 'Date': 'datetime'})
+    yf_data.dropna(inplace=True)
     print(yf_data.head())
     yf_data.to_csv(f'../data/{tick}.csv', index=False)
 
-# tick = 'GOOGL'
+
+tick = 'GOOGL'
+
 # tick = 'SPY'
 # tick = 'AAPL'
-tick = 'META'
+# tick = 'META'
 # tick = 'MSFT'
 
 start_date = "2006-01-01"
