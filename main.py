@@ -87,7 +87,8 @@ class RiskLevelApp(App):
 
 
         # model_name = "LDA"
-        model_name = "LDA_BAGG"
+        # model_name = "LDA_BAGG"
+        model_name = "HYBRID"
 
         trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
 

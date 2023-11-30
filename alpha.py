@@ -6,6 +6,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.linear_model import LogisticRegression
 import numpy as np
+import yfinance as yf
 from sklearn.svm import SVC
 
 from strategy import Strategy
@@ -18,6 +19,8 @@ from forecast import create_lagged_series
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 # snp_forecast.py
 
 from sklearn.ensemble import BaggingClassifier
@@ -48,6 +51,25 @@ class SPYDailyForecastStrategy(Strategy):
 
     def create_symbol_forecast_model(self):
 
+        # initial data before transforming it to a lagged series
+        time_series = yf.download(
+        self.symbol_list[0],(self.model_start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
+        self.model_end_date.strftime('%Y-%m-%d'))
+        
+        # split into testing and training
+        start_test = self.model_start_test_date
+        
+        train_ts = time_series[time_series.index < start_test]
+        test_ts = time_series[time_series.index >= start_test]
+
+        
+        x_train_ts = train_ts[['Open','High','Low','Volume']]
+        y_train_ts = train_ts['Close']
+
+        x_test_ts = test_ts[['Open','High','Low','Volume']]
+        y_test_ts = test_ts['Close']
+
+
         # Create a lagged series of the S&P500 US stock market index
         snpret = create_lagged_series(
         self.symbol_list[0], self.model_start_date, self.model_end_date, lags = 5
@@ -59,7 +81,7 @@ class SPYDailyForecastStrategy(Strategy):
 
         y = snpret["Direction"]
         # Create training and test sets
-        start_test = self.model_start_test_date
+        #start_test = self.model_start_test_date (declared a few lines above)
         X_train = X[X.index < start_test]
         X_train = np.flip(X_train.to_numpy(),axis= 1)
         X_test = X[X.index >= start_test]
@@ -76,6 +98,49 @@ class SPYDailyForecastStrategy(Strategy):
         elif self.model_name == "LDA_BAGG":
             lda = LDA()
             model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+        elif self.model_name == "HYBRID":
+            from statsmodels.tsa.arima.model import ARIMA
+
+            # creating a range of values for the autoregressive (p), integrated (d), and moving average(q) components
+            # represents the relationship between current and past observations; p indicates number of past observations in the model
+            p_list = range(0,3)
+            # represents differencing od time series data to make it stationary (removing trends or seasonality); d indicates number of times the series needs to be differenced
+            d_list = range(0,2)
+            # represents the relationship between the current observation and residual error; q indicates number of past residual errors in the model
+            q_list = range(0,3)
+
+            best_aic = float("inf")
+            best_values = None
+
+            # loops through the p d q possible values to find the ones that create the best fit for the ARIMA model
+            for p in p_list:
+                for d in d_list:
+                    for q in q_list:
+                        values = (p,d,q)
+                        arima_model = ARIMA(y_train_ts, order = values)
+                        try:
+                            results = arima_model.fit()
+                            aic = results.aic
+                            if aic < best_aic:
+                                best_values = values
+                                best_aic = aic
+                        except Exception as e:
+                            print(f"An error occurred: {e}")
+
+            #train ARIMA model with best p, d, q values
+            arima_model = ARIMA(y_train_ts,order=best_values)
+            arima_fit = arima_model.fit()
+
+            arima_pred = arima_fit.predict(start=len(y_train_ts), end=len(y_train_ts) + len(y_test_ts) -1, typ='levels')
+
+            # evaluate arima model
+            arima_mse = np.sqrt(mean_squared_error(y_test_ts, arima_pred))
+            print("ARIMA MSE:", arima_mse)
+
+            # train random forest model
+            model = RandomForestRegressor(n_estimators=100, random_state=29)
+            model.fit(X_train,y_train)
+
 
         # model = SVC()
         # model = LogisticRegression()
