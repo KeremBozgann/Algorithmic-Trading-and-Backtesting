@@ -87,6 +87,7 @@ test_ratio = 0.2
 
 # symbol: stock symbol
 symbol = "SPY"
+# symbol = "GOOGL"
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
 

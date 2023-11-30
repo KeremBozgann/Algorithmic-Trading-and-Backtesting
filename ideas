@@ -24,3 +24,8 @@ Hackathon ideas:
 		- Highlight the part that enclosed in []. 
 		- Leverage chatGPT for finding close matches for the search phrase 
 		- "" gives a hard search (exact phrase should be included), whereas include a '' option for soft search, that 			displays phrases that are similar to that search phrase or have similar semantic meaning to them 
+
+
+ - Word document that lets you talk instead of writing, assists you with writing. Very smart, goes from line to line, understands what you mean. For instance you will say: 
+"Siri, go to line 5, and cut remove the word "some word" from the line 5. Then, it understands the command and goes and removes line 5 from the document. 
+- Can you extend it for it to use the computer for yourself, instead of fucking using the keyboard. For instance: "Siri, open the chrome, go to the tab where I have the canvas open". Then she will reply : "There is no canvas tab" . Then you say: "Okay, then open one canvas tab" opens the canvas tab for you. Then you say : "scroll down to machine learning 5806 and hit click" , scrolls down, enters that page. 

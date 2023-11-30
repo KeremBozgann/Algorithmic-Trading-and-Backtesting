@@ -59,7 +59,12 @@ class SPYDailyForecastStrategy(Strategy):
 
         y = snpret["Direction"]
         # Create training and test sets
-        start_test = self.model_start_test_date
+
+        # start_test = self.model_start_test_date
+        start_test = snpret.index[0] +  pd.DateOffset(years=3)
+        X.index = pd.to_datetime(X.index)
+        y.index = pd.to_datetime(y.index)
+
         X_train = X[X.index < start_test]
         X_train = np.flip(X_train.to_numpy(),axis= 1)
         X_test = X[X.index >= start_test]
@@ -76,6 +81,7 @@ class SPYDailyForecastStrategy(Strategy):
         elif self.model_name == "LDA_BAGG":
             lda = LDA()
             model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+
 
         # model = SVC()
         # model = LogisticRegression()
