@@ -21,6 +21,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import StackingRegressor
 # snp_forecast.py
 
 from sklearn.ensemble import BaggingClassifier
@@ -75,9 +77,11 @@ class SPYDailyForecastStrategy(Strategy):
         X.index = pd.to_datetime(X.index)
         y.index = pd.to_datetime(y.index)
 
+        # make sure the data is indexed by the date
         time_series = time_series.set_index('datetime')
         time_series.index = pd.to_datetime(time_series.index)
-       
+
+        #splitting time series into train and test
         train_ts = time_series[time_series.index < start_test]
         test_ts = time_series[time_series.index >= start_test]
 
@@ -104,6 +108,10 @@ class SPYDailyForecastStrategy(Strategy):
         elif self.model_name == "LDA_BAGG":
             lda = LDA()
             model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+        elif self.model_name == "Random_Forest":
+            # train random forest model
+            model = RandomForestRegressor(n_estimators=100, random_state=29)
+            model.fit(X_train,y_train)
         elif self.model_name == "HYBRID":
             from statsmodels.tsa.arima.model import ARIMA
 
@@ -148,8 +156,30 @@ class SPYDailyForecastStrategy(Strategy):
             print("ARIMA MSE:", arima_mse)
 
             # train random forest model
-            model = RandomForestRegressor(n_estimators=100, random_state=29)
-            model.fit(X_train,y_train)
+            rf_model = RandomForestRegressor(n_estimators=100, random_state=29)
+            rf_model.fit(X_train,y_train)
+
+            rf_pred = rf_model.predict(X_test)
+            rf_mse = np.sqrt(mean_squared_error(y_test,rf_pred))
+            print(rf_mse)
+            # make sure the data is indexed by the date
+            hybrid_data = pd.DataFrame({'arima_close':arima_pred,'rf_close':rf_pred},index=arima_pred.index)
+            
+            #hybrid_data = hybrid_data.set_index('datetime')
+            hybrid_data.index = pd.to_datetime(hybrid_data.index)
+
+            #splitting hybrid data into train and test
+            hybrid_train = hybrid_data[hybrid_data.index < start_test]
+            #hybrid_test = hybrid_data[hybrid_data.index >= start_test]
+            hybrid_test = y_test[:len(hybrid_train)]
+
+            # make a Lienar Regression meta-combined model using ARIMA and RandomForest predictions as features 
+            model = LinearRegression()
+            model.fit(hybrid_train,hybrid_test)
+
+            # try stacking with neural network laters? nvm doesn't work cause arima model isnt recognized as a regressor so wed have to manually make it a regressor
+            # model = StackingRegressor(estimators=[('arima',arima_model),('rf',rf_model)],final_estimator = LinearRegression())
+            # model.fit(X_test,y_test)
 
         # model = SVC()
         # model = LogisticRegression()
