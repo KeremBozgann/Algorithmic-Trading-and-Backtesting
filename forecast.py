@@ -36,17 +36,22 @@ def create_lagged_series(symbol, start_date, end_date, lags=5):
     #     symbol, "yahoo",
     #     (start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
     #     end_date.strftime('%Y-%m-%d'))
-    ts = yf.download(
-        symbol,(start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
-        end_date.strftime('%Y-%m-%d'))
+
+    # ts = yf.download(
+    #     symbol,(start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
+    #     end_date.strftime('%Y-%m-%d'))
+
+    ts = pd.read_csv(f'data/{symbol}.csv')
+
+
     # Create the new lagged DataFrame
     tslag = pd.DataFrame(index=ts.index)
-    tslag["Today"] = ts["Adj Close"]
-    tslag["Volume"] = ts["Volume"]
+    tslag["Today"] = ts["adj_close"]
+    tslag["Volume"] = ts["volume"]
 
     # Create the shifted lag series of prior trading period close values
     for i in range(0, lags):
-        tslag["Lag%s" % str(i + 1)] = ts["Adj Close"].shift(i + 1)
+        tslag["Lag%s" % str(i + 1)] = ts["adj_close"].shift(i + 1)
 
     # Create the returns DataFrame
     tsret = pd.DataFrame(index=tslag.index)
@@ -64,7 +69,11 @@ def create_lagged_series(symbol, start_date, end_date, lags=5):
             tslag["Lag%s" % str(i + 1)].pct_change() * 100.0
     # Create the "Direction" column (+1 or -1) indicating an up/down day
     tsret["Direction"] = np.sign(tsret["Today"])
+    tsret['datetime'] = ts['datetime']
+    tsret.set_index('datetime', inplace=True)
+    tsret.index = pd.to_datetime(tsret.index)
     tsret = tsret[tsret.index >= start_date]
+    tsret = tsret.iloc[lags+1:]
     return tsret
 
 

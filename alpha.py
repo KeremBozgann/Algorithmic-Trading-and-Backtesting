@@ -52,24 +52,12 @@ class SPYDailyForecastStrategy(Strategy):
     def create_symbol_forecast_model(self):
 
         # initial data before transforming it to a lagged series
-        time_series = yf.download(
-        self.symbol_list[0],(self.model_start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
-        self.model_end_date.strftime('%Y-%m-%d'))
+        # time_series = yf.download(
+        # self.symbol_list[0],(self.model_start_date - datetime.timedelta(days=365)).strftime('%Y-%m-%d'),
+        # self.model_end_date.strftime('%Y-%m-%d'))
+
+        time_series = pd.read_csv(f'data/{self.symbol_list[0]}.csv')
         
-        # split into testing and training
-        start_test = self.model_start_test_date
-        
-        train_ts = time_series[time_series.index < start_test]
-        test_ts = time_series[time_series.index >= start_test]
-
-        
-        x_train_ts = train_ts[['Open','High','Low','Volume']]
-        y_train_ts = train_ts['Close']
-
-        x_test_ts = test_ts[['Open','High','Low','Volume']]
-        y_test_ts = test_ts['Close']
-
-
         # Create a lagged series of the S&P500 US stock market index
         snpret = create_lagged_series(
         self.symbol_list[0], self.model_start_date, self.model_end_date, lags = 5
@@ -81,6 +69,24 @@ class SPYDailyForecastStrategy(Strategy):
 
         y = snpret["Direction"]
         # Create training and test sets
+        # split into testing and training
+        start_test = pd.to_datetime(self.model_start_test_date)
+        #start_test = snpret.index[0] +  pd.DateOffset(years=3)
+        X.index = pd.to_datetime(X.index)
+        y.index = pd.to_datetime(y.index)
+
+        time_series = time_series.set_index('datetime')
+        time_series.index = pd.to_datetime(time_series.index)
+       
+        train_ts = time_series[time_series.index < start_test]
+        test_ts = time_series[time_series.index >= start_test]
+
+        x_train_ts = train_ts[['open','high','low','volume']]
+        y_train_ts = train_ts['close']
+
+        x_test_ts = test_ts[['open','high','low','volume']]
+        y_test_ts = test_ts['close']
+       
         #start_test = self.model_start_test_date (declared a few lines above)
         X_train = X[X.index < start_test]
         X_train = np.flip(X_train.to_numpy(),axis= 1)
@@ -101,6 +107,7 @@ class SPYDailyForecastStrategy(Strategy):
         elif self.model_name == "HYBRID":
             from statsmodels.tsa.arima.model import ARIMA
 
+
             # creating a range of values for the autoregressive (p), integrated (d), and moving average(q) components
             # represents the relationship between current and past observations; p indicates number of past observations in the model
             p_list = range(0,3)
@@ -109,8 +116,10 @@ class SPYDailyForecastStrategy(Strategy):
             # represents the relationship between the current observation and residual error; q indicates number of past residual errors in the model
             q_list = range(0,3)
 
+
             best_aic = float("inf")
             best_values = None
+
 
             # loops through the p d q possible values to find the ones that create the best fit for the ARIMA model
             for p in p_list:
@@ -132,6 +141,7 @@ class SPYDailyForecastStrategy(Strategy):
             arima_fit = arima_model.fit()
 
             arima_pred = arima_fit.predict(start=len(y_train_ts), end=len(y_train_ts) + len(y_test_ts) -1, typ='levels')
+            # arima_pred = arima_fit.predict(start= self.model_start_date, end= self.model_end_date, typ='levels')
 
             # evaluate arima model
             arima_mse = np.sqrt(mean_squared_error(y_test_ts, arima_pred))
@@ -141,12 +151,10 @@ class SPYDailyForecastStrategy(Strategy):
             model = RandomForestRegressor(n_estimators=100, random_state=29)
             model.fit(X_train,y_train)
 
-
         # model = SVC()
         # model = LogisticRegression()
         model.fit(X_train, y_train)
         return model
-
 
     def calculate_signals(self, event):
         """
