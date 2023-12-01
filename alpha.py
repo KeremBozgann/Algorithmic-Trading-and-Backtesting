@@ -32,15 +32,20 @@ class SPYDailyForecastStrategy(Strategy):
     the returns for a subsequent time period and then generated long/exit signals based on the prediction.
     """
 
-    def __init__(self, bars, events, model_name):
+    def __init__(self, bars, events, model_name, start_train_date, end_train_date, start_test_date):
         self.bars = bars
 
         self.symbol_list = self.bars.symbol_list
         self.events = events
         self.datetime_now = datetime.datetime.utcnow()
-        self.model_start_date = datetime.datetime(2001, 1, 10)
-        self.model_end_date = datetime.datetime(2005, 12, 31)
-        self.model_start_test_date = datetime.datetime(2005, 1, 1)
+        # self.model_start_date = datetime.datetime(2001, 1, 10)
+        self.model_start_date = start_train_date
+        # self.model_end_date = datetime.datetime(2005, 12, 31)
+        self.model_end_date = end_train_date
+        # self.model_start_test_date = datetime.datetime(2005, 1, 1)
+        self.model_start_test_date = start_test_date
+
+        self.flag_buy_and_sell = False
         self.long_market = False
         self.short_market = False
         self.bar_index = 0
@@ -62,7 +67,11 @@ class SPYDailyForecastStrategy(Strategy):
         # Create training and test sets
 
         # start_test = self.model_start_test_date
-        start_test = snpret.index[0] +  pd.DateOffset(years=3)
+
+
+        # start_test = snpret.index[0] +  pd.DateOffset(years=3)
+        start_test =  self.model_start_test_date
+
         X.index = pd.to_datetime(X.index)
         y.index = pd.to_datetime(y.index)
 
@@ -75,21 +84,24 @@ class SPYDailyForecastStrategy(Strategy):
         y_test = y[y.index >= start_test]
         y_test = y_test.to_numpy()
 
-        if self.model_name == "QDA":
-            model = QDA()
-        elif self.model_name == "LDA":
-            model = LDA()
-        elif self.model_name == "LDA_BAGG":
-            lda = LDA()
-            model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
-        elif self.model_name == "Perceptron":
-            model = Perceptron(fit_intercept = True)
+        if self.model_name == "Statistical":
+            return
+        else:
+            if self.model_name == "QDA":
+                model = QDA()
 
+            elif self.model_name == "LDA":
+                model = LDA()
 
-        # model = SVC()
-        # model = LogisticRegression()
-        model.fit(X_train, y_train)
-        return model
+            elif self.model_name == "LDA_BAGG":
+                lda = LDA()
+                model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+
+            elif self.model_name == "Perceptron":
+                model = Perceptron(fit_intercept = True)
+
+            model.fit(X_train, y_train)
+            return model
 
 
     def calculate_signals(self, event):
@@ -130,16 +142,33 @@ class SPYDailyForecastStrategy(Strategy):
                     )
 
                 # pred = self.model.predict(pred_series)
-                pred = self.model.predict(pred_series.values.reshape(1,-1))
-                # pred = self.model.predict(pd.DataFrame({'Lag1':[pred_series.values[0]], 'Lag2':[pred_series.values[1]]}))
-                if pred > 0 and not self.long_market:
-                    self.long_market = True
-                    signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
-                    self.events.put(signal)
-                if pred < 0 and self.long_market:
-                    self.long_market = False
-                    signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
-                    self.events.put(signal)
+
+                if self.model_name == "Statistical":
+                    # pred = self.model.predict(pred_series)
+                    if self.flag_buy_and_sell:
+                        signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
+                        self.events.put(signal)
+                        self.flag_buy_and_sell = False
+                    else:
+                        if np.all(pred_series.values.reshape(1, -1)[-4:] < 0):
+                            pred = 1
+                            self.flag_buy_and_sell = True
+                            signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
+                            self.events.put(signal)
+
+                else:
+                    pred = self.model.predict(pred_series.values.reshape(1,-1))
+
+
+                    # pred = self.model.predict(pd.DataFrame({'Lag1':[pred_series.values[0]], 'Lag2':[pred_series.values[1]]}))
+                    if pred > 0 and not self.long_market:
+                        self.long_market = True
+                        signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
+                        self.events.put(signal)
+                    if pred < 0 and self.long_market:
+                        self.long_market = False
+                        signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
+                        self.events.put(signal)
 
 
 class DecisionStumpForecastStrategy(Strategy):
@@ -298,18 +327,21 @@ if __name__ == "__main__":
     )
     backtest.simulate_trading()
 
-def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name):
+def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name, start_train_date, end_train_date, start_test_date):
     csv_dir = 'data'  # CHANGE THIS!
     # symbol_list = ['SPY']
     # initial_capital = 100000.0
 
     heartbeat = 0.0
-    start_year = 2006
+    # start_year = 2006
     # start_year = 2015
-    start_date = datetime.datetime(start_year, 1, 3)
+    # start_date = datetime.datetime(start_train_date, 1, 3)
+    start_date = start_train_date
+
     backtest = Backtest(
         csv_dir, symbol_list, initial_capital, heartbeat,
-        start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy, model_name
+        start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy, model_name,
+        start_train_date, end_train_date, start_test_date
     )
     total_gain , returns, equity_curve, drawdown = backtest.simulate_trading(trade_volume)
 

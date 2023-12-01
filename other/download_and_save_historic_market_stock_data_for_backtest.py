@@ -18,7 +18,9 @@ def get_and_save_data(tick, start_date, end_date):
 
 # tick = 'META'
 
-tick = 'SPY'
+# tick = 'SPY'
+# tick = 'TSLA'
+tick = 'AMZN'
 # tick = 'AAPL'
 # tick = 'META'
 # tick = 'MSFT'

@@ -50,7 +50,7 @@ class HistoricCSVDataHandler(DataHandler):
     """
     HistoricCSVDataHandler is designed to read CSV files for each requested symbol from disk and provide an interface to obtain the "latest" bar in a manner identical to a live trading interface.
     """
-    def __init__(self, events, csv_dir, symbol_list):
+    def __init__(self, events, csv_dir, symbol_list, start_test_date):
         """
         Initialises the historic data handler by requesting the location of the CSV files and a list of symbols.
         It will be assumed that all files are of the form ’symbol.csv’, where symbol is a string in the list.
@@ -64,6 +64,7 @@ class HistoricCSVDataHandler(DataHandler):
         self.symbol_data = {}
         self.latest_symbol_data = {}
         self.continue_backtest = True
+        self.start_test_date = start_test_date
         self._open_convert_csv_files()
 
     def _open_convert_csv_files(self):
@@ -81,6 +82,13 @@ class HistoricCSVDataHandler(DataHandler):
                 names = [
                 'datetime', 'open', 'high',
                 'low', 'close', 'adj_close', 'volume' ]).sort_index()
+
+
+            threshold_datetime = self.start_test_date
+
+            self.symbol_data[s] = self.symbol_data[s][self.symbol_data[s].index > threshold_datetime]
+
+
             # Combine the index to pad forward values
             if comb_index is None:
                 comb_index = self.symbol_data[s].index

@@ -84,6 +84,7 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 # lags: number of days we look before the day we want to make a prediction
 lags = 4
+# lags = 5
 
 # train, validation, test data split ratios
 train_ratio = 0.5
@@ -91,17 +92,46 @@ val_ratio = 0.5
 test_ratio = 0.0
 
 # symbol: stock symbol
-# symbol = "SPY"
-symbol = "AAPL"
 # symbol = "GOOGL"
+# symbol = "SPY"
+
+
+
+
+# symbol = "AAPL"
+# symbol = "AMZN"
+symbol = "TSLA"
+
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
+
+symbol_list_keen_perc =["AAPL", "AMZN",  "TSLA"]
+
+X_train_keen_perc_list = list()
+X_val_keen_perc_list = list()
+X_test_keen_perc_list = list()
+
+y_train_keen_perc_list = list()
+y_val_keen_perc_list = list()
+y_test_keen_perc_list = list()
+
+for symbol_keen_perc in symbol_list_keen_perc:
+    X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
+
+    X_train_keen_perc_list.append(X_train)
+    X_val_keen_perc_list.append(X_val)
+    X_test_keen_perc_list.append(X_test)
+
+    y_train_keen_perc_list.append(y_train)
+    y_val_keen_perc_list.append(y_val)
+    y_test_keen_perc_list.append(y_test)
 
 
 # your model goes here.
 # model = QDA()
 
-model = Perceptron(fit_intercept = True)
+model_perc = LogisticRegression(fit_intercept = True)
+model_keen_perc = LogisticRegression(fit_intercept = True)
 # model = LDA()
 # model = SVC()
 # model = LogisticRegression()
@@ -117,17 +147,59 @@ is_negative_val = (X_val < 0).all(axis=1)
 X_val_consec_neg = X_val[is_negative_val]
 y_val_consec_neg = y_val[is_negative_val]
 
+
+
+
+X_train_consec_neg_keen_perc = np.zeros([0,lags])
+X_val_consec_neg_keen_perc= np.zeros([0,lags])
+X_test_consec_neg_keen_perc = np.zeros([0,lags])
+
+y_train_consec_neg_keen_perc = np.zeros([0])
+y_val_consec_neg_keen_perc = np.zeros([0])
+y_test_consec_neg_keen_perc = np.zeros([0])
+
+for i in range(len(X_train_keen_perc_list)):
+    _X_train_keen_perc_sign = np.sign(X_train_keen_perc_list[i])
+    _X_val_keen_perc_sign = np.sign(X_val_keen_perc_list[i])
+
+    is_negative_train_keen_perc = (_X_train_keen_perc_sign < 0).all(axis=1)
+    is_negative_val_keen_perc = (_X_val_keen_perc_sign < 0).all(axis=1)
+
+    _X_train_consec_neg_keen_perc = X_train_keen_perc_list[i][is_negative_train_keen_perc]
+    _X_val_consec_neg_keen_perc = X_val_keen_perc_list[i][is_negative_val_keen_perc]
+
+    _y_train_consec_neg_keen_perc = y_train_keen_perc_list[i][is_negative_train_keen_perc]
+    _y_val_consec_neg_keen_perc = y_val_keen_perc_list[i][is_negative_val_keen_perc]
+
+    X_train_consec_neg_keen_perc = np.append(X_train_consec_neg_keen_perc, _X_train_consec_neg_keen_perc, axis = 0)
+    X_val_consec_neg_keen_perc = np.append(X_val_consec_neg_keen_perc, _X_val_consec_neg_keen_perc, axis = 0)
+
+    y_train_consec_neg_keen_perc = np.append(y_train_consec_neg_keen_perc, _y_train_consec_neg_keen_perc)
+    y_val_consec_neg_keen_perc = np.append(y_val_consec_neg_keen_perc, _y_val_consec_neg_keen_perc)
+
+
 # model.fit(X_train, y_train)
 
-#
-# model.fit(X_train, y_train)
-# model.partial_fit(X_train_consec_neg, y_train_consec_neg)
+# #
+# model_perc.fit(X_train, y_train)
+# model_perc.partial_fit(X_train_consec_neg, y_train_consec_neg)
 
-model.fit(X_train_consec_neg, y_train_consec_neg)
+model_perc.fit(X_train_consec_neg, y_train_consec_neg)
+y_val_consec_neg_pred =model_perc.predict(X_val_consec_neg)
+y_val_pred_always_neg = 1 * np.ones([len(y_val_consec_neg.to_numpy())])
 
-y_val_consec_neg_pred =model.predict(X_val_consec_neg)
 
-print("accuracy score", accuracy_score(y_val_consec_neg_pred, y_val_consec_neg))
+
+model_keen_perc.fit(X_train_consec_neg_keen_perc, y_train_consec_neg_keen_perc)
+y_val_consec_neg_keen_perc_pred =model_keen_perc.predict(X_val_consec_neg_keen_perc)
+y_val_consec_neg_keen_perc_pred_always_neg = 1 * np.ones([len(y_val_consec_neg_keen_perc)])
+
+
+
+print("accuracy score Perceptron", accuracy_score(y_val_consec_neg_pred, y_val_consec_neg))
+print("accuracy score Keen-Perceptron", accuracy_score(y_val_consec_neg_keen_perc_pred, y_val_consec_neg_keen_perc))
+print("accuracy score Rule Based", accuracy_score(y_val_pred_always_neg, y_val_consec_neg))
+
 
 
 

@@ -11,6 +11,7 @@ from matplotlib.ticker import MaxNLocator
 import pandas as pd
 import matplotlib.pyplot as plt
 from beta import beta_model, best_stock
+import datetime
 
 
 class RiskLevelApp(App):
@@ -87,12 +88,20 @@ class RiskLevelApp(App):
 
 
         # model_name = "LDA"
+        model_name = "Statistical"
+        # model_name = "Keen-Perceptron"
         # model_name = "LDA_BAGG"
-        model_name = "Perceptron"
+        # model_name = "Perceptron"
+        # model_name = "Rule Based"
 
-        trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
+        start_train_date, end_train_date, start_test_date = datetime.datetime(2014, 1, 10) , datetime.datetime(2015, 1, 10) , datetime.datetime(2015, 1, 11)
 
 
+        if not model_name=="Statistical":
+            trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
+
+        else:
+            trade_volume = 100 + (1000000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
 
         # Get the optimal allocation ratios suggested by the beta model
         weights = beta_model(self.stock_symbols)
@@ -109,14 +118,15 @@ class RiskLevelApp(App):
             _symbol_list = []
             _symbol_list.append(self.stock_symbols[i])
 
-            total_gain, returns, equity_curve, drawdown = run_snp_forecast(_symbol_list,
-                                                                           _initial_capital, round(_trade_volume),
-                                                                           model_name)
+            if not _initial_capital == 0:
+                total_gain, returns, equity_curve, drawdown = run_snp_forecast(_symbol_list,
+                                                                               _initial_capital, round(_trade_volume),
+                                                                               model_name, start_train_date, end_train_date, start_test_date)
 
-            returns_numpy = returns.to_numpy()
-            equity_curve_numpy = equity_curve.to_numpy()
+                returns_numpy = returns.to_numpy()
+                equity_curve_numpy = equity_curve.to_numpy()
 
-            equity_curve_zero_mean = (equity_curve_numpy - 1)[1:]
+                equity_curve_zero_mean = (equity_curve_numpy - 1)[1:]
 
 
         #
@@ -131,16 +141,21 @@ class RiskLevelApp(App):
 
 
 
-            # Update the result_label with the total_gain
-            self.result_label.text = f"Total Gain: {total_gain[1]}"
-            self.drawdown.text = f"Drawdown: {round(drawdown * 100, 2)}%"
-            self.volume.text=  f"Trade Volume: {round(trade_volume)}"
-            self.lowest.text=  f"Lowest Equity: {round(np.min(equity_curve_zero_mean * 100))}%"
+                # Update the result_label with the total_gain
+                self.result_label.text = f"Total Gain: {total_gain[1]}"
+                self.drawdown.text = f"Drawdown: {round(drawdown * 100, 2)}%"
+                self.volume.text=  f"Trade Volume: {round(trade_volume)}"
+                self.lowest.text=  f"Lowest Equity: {round(np.min(equity_curve_zero_mean * 100))}%"
 
 
 
             df = pd.read_csv(f'data/{self.stock_symbols[i]}.csv')
+            threshold_datetime = start_test_date
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            df = df[df['datetime'] > threshold_datetime]
+
             stock_close = df['adj_close'].to_numpy()
+
 
 
             stock_close_norm= (stock_close - stock_close[0])/stock_close[0]

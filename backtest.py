@@ -18,7 +18,7 @@ class Backtest(object):
     def __init__(
             self, csv_dir, symbol_list, initial_capital,
             heartbeat, start_date, data_handler,
-            execution_handler, portfolio, strategy, model_name):
+            execution_handler, portfolio, strategy, model_name, start_train_date, end_train_date, start_test_date):
         """
         Initialises the backtest.
         Parameters:
@@ -45,6 +45,9 @@ class Backtest(object):
         self.fills = 0
         self.num_strats = 1
         self.model_name = model_name
+        self.start_train_date = start_train_date
+        self.end_train_date = end_train_date
+        self.start_test_date = start_test_date
         self._generate_trading_instances()
 
 
@@ -56,8 +59,9 @@ class Backtest(object):
         print(
             "Creating DataHandler, Strategy, Portfolio and ExecutionHandler")
         self.data_handler = self.data_handler_cls(self.events, self.csv_dir,
-                                                  self.symbol_list)
-        self.strategy = self.strategy_cls(self.data_handler, self.events, self.model_name)
+                                                  self.symbol_list, self.start_test_date)
+        self.strategy = self.strategy_cls(self.data_handler, self.events, self.model_name,
+                                          self.start_train_date, self.end_train_date, self.start_test_date)
         self.portfolio = self.portfolio_cls(self.data_handler, self.events,
                                             self.start_date,
                                             self.initial_capital)

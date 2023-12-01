@@ -334,10 +334,10 @@ def analyze_post_decrease_ratios(symbol, max_n, start_date, end_date):
 
 
 # Example usage
-stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA"] # Replace with your desired stock symbols
+stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA", "META", "TSLA"] # Replace with your desired stock symbols
 max_n = 10  # Maximum number of consecutive days of decrease
-start_date = '2014-01-01'  # Start date for the data
-end_date = '2018-01-01'  # End date for the data
+start_date = '2010-01-01'  # Start date for the data
+end_date = '2014-01-01'  # End date for the data
 
 plt.figure(figsize=(12, 8))
 
