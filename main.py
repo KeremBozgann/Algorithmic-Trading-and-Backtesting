@@ -88,13 +88,14 @@ class RiskLevelApp(App):
 
 
         # model_name = "LDA"
-        model_name = "Statistical"
+        # model_name = "Statistical"
         # model_name = "Keen-Perceptron"
         # model_name = "LDA_BAGG"
         # model_name = "Perceptron"
         # model_name = "Rule Based"
         # model_name = "Gradient Boosting"
         # model_name = "Random Forests"
+        model_name = "Sequential"
 
         start_train_date, end_train_date, start_test_date = datetime.datetime(2014, 1, 10) , datetime.datetime(2015, 1, 10) , datetime.datetime(2015, 1, 11)
 

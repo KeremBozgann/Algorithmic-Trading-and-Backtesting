@@ -10,6 +10,8 @@ import yfinance as yf
 from sklearn.svm import SVC
 import xgboost as xgb
 
+from keras import Sequential
+from keras import layers
 from strategy import Strategy
 from event import SignalEvent
 from backtest import Backtest
@@ -17,10 +19,10 @@ from data import HistoricCSVDataHandler
 from execution import SimulatedExecutionHandler
 from portfolio import Portfolio
 from forecast import create_lagged_series
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.arima.model import ARIMA
@@ -138,15 +140,39 @@ class SPYDailyForecastStrategy(Strategy):
             params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
             model = xgb.XGBClassifier(**params)
             y_train[y_train==-1] = 0
+            # same issues as with Random Forest
         
         elif self.model_name == "Perceptron":
             model = Perceptron(fit_intercept = True)
 
-            
-        
+        elif self.model_name == "Sequential":
+            # normalizing the data
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.fit_transform(X_test)
+
+            model = Sequential([
+                # dense layers used for feedforward neural network
+                # input shape with 64 neurons, ReLU activation function - ouputs input directly if positive, otherwise output is zero
+                layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+                # hidden layer with 32 neurons and ReLU activation function - used for learning patterns and representations in the data
+                layers.Dense(32, activation='relu'),
+                # output later with one neuron and sigmoid activation function - sigmoid commonly used in binary classigication - produces probability score. 
+                layers.Dense(1, activation='sigmoid')
+            ])
+
+            # Adam optimizer combines RMSprop and momentum - faster convergence. two moving averages that are updated with moving average on squared and original gradients. (average of squared gradients = learning rate)
+            # binary crossentropy measures difference between predicted and true probability distributiion
+            model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+            # optimizers tried: sgd, adam, adagrad
+            model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+
         # model = SVC()
         # model = LogisticRegression()
-        model.fit(X_train, y_train)
+        if self.model_name == "Sequential":
+            model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+        else:
+            model.fit(X_train, y_train)
         return model
 
     def calculate_signals(self, event):
