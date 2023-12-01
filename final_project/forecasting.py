@@ -2,6 +2,8 @@ import numpy as np
 import os
 import pandas as pd
 import sys
+import xgboost as xgb
+
 # from forecast import create_lagged_series
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -12,6 +14,7 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
+
 # from sklearn.utils import MovingAverage
 
 
@@ -78,7 +81,7 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 
 # lags: number of days we look before the day we want to make a prediction
-lags = 10
+lags = 5
 
 # train, validation, test data split ratios
 train_ratio = 0.6
@@ -93,15 +96,19 @@ X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, 
 
 
 # your model goes here.
-model = QDA()
-
+#model = QDA()
+params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
+model = xgb.XGBRFClassifier(**params)
+y_train[y_train==-1] = 0
+model.fit(X_train, y_train)
 
 # model = LDA()
 # model = SVC()
 # model = LogisticRegression()
 
-model.fit(X_train, y_train)
+#model.fit(X_train, y_train)
 y_val_pred =model.predict(X_val)
+y_val_pred[y_val_pred==0] = -1
 print("accuracy score", accuracy_score(y_val_pred, y_val))
 
 
