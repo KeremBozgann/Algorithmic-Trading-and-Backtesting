@@ -27,6 +27,8 @@ def fetch_and_plot_one_stock(symbol, start_date, end_date):
 
 # fetch_and_plot_one_stock("BA", "2017-01-4", "2017-02-25")  # A shorter range is used for better visibility
 # fetch_and_plot_one_stock("AAPL",  "2017-01-4", "2017-02-25")   # A shorter range is used for better visibility
+# fetch_and_plot_one_stock("BA", "2017-01-4", "2017-02-25")  # A shorter range is used for better visibility
+# fetch_and_plot_one_stock("AAPL",  "2017-01-4", "2017-02-25")   # A shorter range is used for better visibility
 
 
 
