@@ -70,7 +70,7 @@ class Backtest(object):
         i = 0
         while True:
             i += 1
-            print(i)
+            # print(i)
             # Update the market bars
             if self.data_handler.continue_backtest == True:
                 self.data_handler.update_bars()

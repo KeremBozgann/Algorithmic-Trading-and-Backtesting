@@ -13,6 +13,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 # from sklearn.utils import MovingAverage
+from sklearn.linear_model import Perceptron
 
 
 def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
@@ -21,9 +22,12 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
     path= os.path.join("..", 'data', symbol+ ".csv")
     ts = pd.read_csv(path)
 
-    # close = (data['close'].to_numpy()).reshape(-1, 1)
-
-
+    ts['datetime'] = pd.to_datetime(ts['datetime'], format='%Y/%m/%d')
+    start_date = '2010/01/01'
+    end_date = '2018/01/01'
+    start_date = pd.to_datetime(start_date, format='%Y/%m/%d')
+    end_date = pd.to_datetime(end_date, format='%Y/%m/%d')
+    ts = ts[(ts['datetime'] >= start_date) & (ts['datetime'] < end_date)]
 
     tslag = pd.DataFrame(index=ts.index)
     tslag["Today"] = ts["adj_close"]
@@ -51,7 +55,8 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
     tsret["Direction"] = np.sign(tsret["Today"])
     tsret = tsret.iloc[lags+1:]
 
-    X = tsret[["Lag1", "Lag2", "Lag3", "Lag4", "Lag5"]]
+
+    X = tsret[[f"Lag{i+1}" for i in range(lags)]]
     y = tsret["Direction"]
 
     num_data = X.shape[0]
@@ -78,36 +83,59 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 
 # lags: number of days we look before the day we want to make a prediction
-lags = 10
+lags = 4
 
 # train, validation, test data split ratios
-train_ratio = 0.6
-val_ratio = 0.2
-test_ratio = 0.2
+train_ratio = 0.5
+val_ratio = 0.5
+test_ratio = 0.0
 
 # symbol: stock symbol
-symbol = "SPY"
+# symbol = "SPY"
+symbol = "AAPL"
 # symbol = "GOOGL"
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
 
 
 # your model goes here.
-model = QDA()
+# model = QDA()
 
-
+model = Perceptron(fit_intercept = True)
 # model = LDA()
 # model = SVC()
 # model = LogisticRegression()
 
-model.fit(X_train, y_train)
-y_val_pred =model.predict(X_val)
-print("accuracy score", accuracy_score(y_val_pred, y_val))
+
+X_train_sign = np.sign(X_train)
+
+is_negative = (X_train < 0).all(axis=1)
+X_train_consec_neg = X_train[is_negative]
+y_train_consec_neg = y_train[is_negative]
+
+is_negative_val = (X_val < 0).all(axis=1)
+X_val_consec_neg = X_val[is_negative_val]
+y_val_consec_neg = y_val[is_negative_val]
+
+# model.fit(X_train, y_train)
+
+#
+# model.fit(X_train, y_train)
+# model.partial_fit(X_train_consec_neg, y_train_consec_neg)
+
+model.fit(X_train_consec_neg, y_train_consec_neg)
+
+y_val_consec_neg_pred =model.predict(X_val_consec_neg)
+
+print("accuracy score", accuracy_score(y_val_consec_neg_pred, y_val_consec_neg))
+
 
 
 #confusion matrix:
-matrix = confusion_matrix(y_val, y_val_pred)
-print(matrix.diagonal()/matrix.sum(axis=1))
+matrix = confusion_matrix(y_val_consec_neg, y_val_consec_neg_pred)
+print(matrix)
+# print(matrix.diagonal()/matrix.sum(axis=1))
+
 
 
 

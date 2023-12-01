@@ -22,6 +22,7 @@ from sklearn.metrics import accuracy_score
 
 from sklearn.ensemble import BaggingClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.linear_model import Perceptron
 
 
 
@@ -81,6 +82,8 @@ class SPYDailyForecastStrategy(Strategy):
         elif self.model_name == "LDA_BAGG":
             lda = LDA()
             model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
+        elif self.model_name == "Perceptron":
+            model = Perceptron(fit_intercept = True)
 
 
         # model = SVC()
