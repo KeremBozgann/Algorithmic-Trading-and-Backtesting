@@ -6,6 +6,7 @@ import xgboost as xgb
 import seaborn as sns
 
 # from forecast import create_lagged_series
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
@@ -140,24 +141,27 @@ model_keen_perc = LogisticRegression(fit_intercept = True)
 # your model goes here.
 #model = QDA()
 params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
-model = xgb.XGBClassifier(**params)
-y_train[y_train==-1] = 0
-model = QDA()
+# model = xgb.XGBClassifier(**params)
+model = RandomForestClassifier(n_estimators=20, random_state=42)
+# y_train[y_train==-1] = 0
+# model = QDA()
 model.fit(X_train, y_train)
 
-# y_pred = model.predict(X_val)
-# print(y_pred)
-# y_true = y_val
-# class_labels = [-1, 1]
+y_pred = model.predict(X_val)
+# y_pred[y_pred==0]=-1
+print(y_pred)
 
-# conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
-# print(conf_mat)
-# print(accuracy_score(y_true,y_pred))
-# sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
-# plt.title('Confusion Matrix')
-# plt.xlabel('Predicted')
-# plt.ylabel('True')
-# plt.show()
+y_true = y_val
+class_labels = [-1, 1]
+
+conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
+print(conf_mat)
+print(accuracy_score(y_true,y_pred))
+sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
 
 
 
@@ -181,40 +185,40 @@ model = Sequential([
 ])
 
 
-# print("!!!!!!!!!!!!!!!!!!!!",X_test,"!!!!!!!!")
-# print("!!!!!!",y_test,"!!!!!!!!!")
-# Adam optimizer combines RMSprop and momentum - faster convergence. two moving averages that are updated with moving average on squared and original gradients. (average of squared gradients = learning rate)
-# binary crossentropy measures difference between predicted and true probability distributiion
-model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
-# optimizers tried: sgd, adam, adagrad. adam had best equity curve
-# model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val))
+# # print("!!!!!!!!!!!!!!!!!!!!",X_test,"!!!!!!!!")
+# # print("!!!!!!",y_test,"!!!!!!!!!")
+# # Adam optimizer combines RMSprop and momentum - faster convergence. two moving averages that are updated with moving average on squared and original gradients. (average of squared gradients = learning rate)
+# # binary crossentropy measures difference between predicted and true probability distributiion
+# model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+# # optimizers tried: sgd, adam, adagrad. adam had best equity curve
+# # model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val))
 
-model_fit = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+# model_fit = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
 
-y_true = np.argmax(y_val)
-y_pred = model.predict(X_val)
-# for array in y_pred:
-#     print(y_pred)
-y_pred = np.where(y_pred > 0, 1, -1)
-y_pred = y_pred.flatten()
-y_pred = pd.Series(y_pred, name = "Predicted")
-print(y_pred)
-y_true = pd.Series(y_val, name = "Actual")
-y_true = y_true.reset_index(drop=True)
-print(y_true)
+# y_true = np.argmax(y_val)
+# y_pred = model.predict(X_val)
+# # for array in y_pred:
+# #     print(y_pred)
+# y_pred = np.where(y_pred > 0, 1, -1)
+# y_pred = y_pred.flatten()
+# y_pred = pd.Series(y_pred, name = "Predicted")
+# print(y_pred)
+# y_true = pd.Series(y_val, name = "Actual")
+# y_true = y_true.reset_index(drop=True)
+# print(y_true)
 
 
-class_labels = [-1, 1]
+# class_labels = [-1, 1]
 
-conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
-print(conf_mat)
-print(accuracy_score(y_true,y_pred))
+# conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
+# print(conf_mat)
+# print(accuracy_score(y_true,y_pred))
 
-sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
-plt.title('Confusion Matrix')
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.show()
+# sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
+# plt.title('Confusion Matrix')
+# plt.xlabel('Predicted')
+# plt.ylabel('True')
+# plt.show()
 
 
 

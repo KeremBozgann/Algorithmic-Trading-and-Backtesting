@@ -10,6 +10,7 @@ import yfinance as yf
 from sklearn.svm import SVC
 import xgboost as xgb
 
+from sklearn.ensemble import RandomForestClassifier
 from keras import Sequential
 from keras import layers, regularizers
 from strategy import Strategy
@@ -158,16 +159,14 @@ class SPYDailyForecastStrategy(Strategy):
             lda = LDA()
             model = BaggingClassifier(base_estimator=lda, n_estimators=10, random_state=0)
 
-        elif self.model_name == "Random_Forest":
+        elif self.model_name == "Random Forests":
 
             # train random forest model
-            params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
-            model = xgb.XGBRFClassifier(**params)
-            y_train[y_train==-1] = 0
+            model = RandomForestClassifier(n_estimators=20, random_state=42)
             # model seems extremely optimistic with SPY data but works poor with AAPL data
             # check for multicollinearity or other issues
 
-        elif self.model_name == "Gradient_Boosting":
+        elif self.model_name == "Gradient Boosting":
 
             # model = xgb.XGBClassifier(n_estimators=100,objective='multi:softmax')
             params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
