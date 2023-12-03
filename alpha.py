@@ -26,7 +26,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
-from statsmodels.tsa.arima.model import ARIMA
+# from statsmodels.tsa.arima.model import ARIMA
 # snp_forecast.py
 
 from sklearn.ensemble import BaggingClassifier
@@ -47,9 +47,9 @@ class SPYDailyForecastStrategy(Strategy):
         self.symbol_list = self.bars.symbol_list
         self.events = events
         self.datetime_now = datetime.datetime.utcnow()
-        self.model_start_date = datetime.datetime(2001, 1, 10)
-        self.model_end_date = datetime.datetime(2005, 12, 31)
-        self.model_start_test_date = datetime.datetime(2018, 1, 1)
+        self.model_start_date = datetime.datetime(2004, 1, 10)
+        self.model_end_date = datetime.datetime(2018, 12, 31)
+        self.model_start_test_date = datetime.datetime(2014, 1, 1)
         self.long_market = False
         self.short_market = False
         self.bar_index = 0

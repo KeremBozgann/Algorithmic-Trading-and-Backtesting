@@ -87,18 +87,18 @@ class RiskLevelApp(App):
         print('selected risk, ', self.selected_risk)
 
 
-        # model_name = "LDA"
+        # model_name = "QDA"
         # model_name = "Statistical"
         # model_name = "Keen-Perceptron"
         # model_name = "LDA_BAGG"
         # model_name = "Perceptron"
         # model_name = "Rule Based"
-        # model_name = "Gradient Boosting"
+        model_name = "Gradient Boosting"
         # model_name = "Random Forests"
-        model_name = "Sequential"
+        # model_name = "Sequential"
 
-        start_train_date, end_train_date, start_test_date, end_test_date = datetime.datetime(2010, 1, 10) , datetime.datetime(2014, 1, 10) ,\
-                                                            datetime.datetime(2014, 1, 11), datetime.datetime(2018, 1, 11)
+        start_train_date, end_train_date, start_test_date, end_test_date = datetime.datetime(2004, 1, 10) , datetime.datetime(2014, 1, 1) ,\
+                                                            datetime.datetime(2014, 1, 2), datetime.datetime(2018, 12, 31)
 
 
         if model_name=="Statistical" or model_name == "Confident Keen Logistic Regression":
@@ -226,8 +226,8 @@ class RiskLevelApp(App):
 
 
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.plot(sum_equity, label=f"Algo - Combined Stocks - Alpha: {model_name}")
-        ax.plot(sum_stock, label=f"Combined Stocks")  # Plot combined stocks
+        ax.plot(sum_equity, label=f"Algo - Predicted Decisions - Alpha: {model_name}")
+        ax.plot(sum_stock, label=f"Stock: {self.stock_symbols[0]}")  # Plot combined stocks
 
         # ax.plot(equity_curve_best.to_numpy() * self.initial_capital, label=f"Algo- Best Stock")  # Plot combined stocks
 
