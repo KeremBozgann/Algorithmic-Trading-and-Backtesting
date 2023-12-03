@@ -92,87 +92,284 @@ def fetch_and_plot_scaled_stocks(symbols, start_date, end_date):
     plt.tight_layout()
     plt.show()
 
-# fetch_and_plot_scaled_stocks(["BA", "AAPL", "TSLA"], "2017-01-04", "2017-02-25")
+# fetch_and_plot_scaled_stocks(["BA", "WMT", "GOOGL"], "2004-11-10", "2004-11-30")
 
-#plot different aspects of the data to look for feature interaction, complexity, homogeneity, multicollinearity
 
-import sys
-import numpy as np
+def fetch_and_plot_long_term_scaled_stocks(symbols, start_date, end_date):
+    plt.figure(figsize=(12, 6))
 
-sys.path.append('..')
-from forecast import create_lagged_series as ls
-import os
-#from data import AAPL
+    for symbol in symbols:
+        # Fetch stock data
+        stock_data = yf.download(symbol, start=start_date, end=end_date)
+
+        # Check if data is empty
+        if stock_data.empty:
+            print(f"No data found for {symbol} in the given date range.")
+            continue
+
+        # Scale the stock prices to start at zero and show relative change
+        scaled_prices = (stock_data['Close'] - stock_data['Close'].iloc[0]) / stock_data['Close'].iloc[0]
+
+        # Plotting the scaled stock data
+        plt.plot(stock_data.index, scaled_prices, marker='', linestyle='-', label=symbol)
+
+    # Formatting date on the x-axis
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=6))  # Set interval to every 6 months
+
+    plt.grid(True)
+
+    # Setting labels and title
+    plt.xlabel("Date")
+    plt.ylabel("Relative Price Change")
+    plt.title("Long Term Scaled Stock Prices")
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# # Example usage - adjust symbols and date range as needed
+# fetch_and_plot_long_term_scaled_stocks(["BA", "WMT", "GOOGL"], "2010-01-01", "2010-05-31")
+
+
+
+
+
+
+import yfinance as yf
 import pandas as pd
-sym = "AAPL"
-lags = 5
-start_date = "2001-01-04"
-end_date = "2005-02-25"
-# data = yf.download("AAPL", "2017-01-04", "2017-02-25")
-#lagged_series = ls(AAPL, "2017-01-04", "2017-02-25")
-ts = pd.read_csv(f'../data/{sym}.csv')
 
-# Create the new lagged DataFrame
-tslag = pd.DataFrame(index=ts.index)
-tslag["Today"] = ts["adj_close"]
-tslag["Volume"] = ts["volume"]
+def analyze_post_increase_days(symbol, n):
+    # Fetch historical stock data
+    stock_data = yf.download(symbol)
 
-# Create the shifted lag series of prior trading period close values
-for i in range(0, lags):
-    tslag["Lag%s" % str(i + 1)] = ts["adj_close"].shift(i + 1)
 
-# Create the returns DataFrame
-tsret = pd.DataFrame(index=tslag.index)
-tsret["Volume"] = tslag["Volume"]
-tsret["Today"] = tslag["Today"].pct_change() * 100.0
+    # Calculate daily returns
+    stock_data['Daily_Return'] = stock_data['Close'].pct_change()
 
-# If any of the values of percentage returns equal zero, set them to # a small number (stops issues with QDA model in Scikit-Learn)
-for i, x in enumerate(tsret["Today"]):
-    if (abs(x) < 0.0001):
-        tsret["Today"][i] = 0.0001
+    # Identify days with price increase
+    stock_data['Increase'] = stock_data['Daily_Return'] > 0
 
-# Create the lagged percentage returns columns
-for i in range(0, lags):
-    tsret["Lag%s" % str(i + 1)] = \
-        tslag["Lag%s" % str(i + 1)].pct_change() * 100.0
-# Create the "Direction" column (+1 or -1) indicating an up/down day
-tsret["Direction"] = np.sign(tsret["Today"])
-tsret['datetime'] = ts['datetime']
-tsret.set_index('datetime', inplace=True)
-tsret.index = pd.to_datetime(tsret.index)
-tsret = tsret[tsret.index >= start_date]
-tsret = tsret.iloc[lags+1:]
-lagged_series = tsret
-# Complexity
-# sns.pairplot(data)
+    # Find sequences of n consecutive increases
+    stock_data['Consecutive_Increases'] = stock_data['Increase'].rolling(window=n).sum() == n
+
+    # Shift the consecutive increases column to align with the next day
+    stock_data['Prev_Consecutive_Increases'] = stock_data['Consecutive_Increases'].shift(-n)
+
+    # Count the number of increases and decreases after n consecutive increases
+    increases_after_n_increases = stock_data[stock_data['Prev_Consecutive_Increases'] & stock_data['Increase']]['Increase'].count()
+    decreases_after_n_increases = stock_data[stock_data['Prev_Consecutive_Increases'] & ~stock_data['Increase']]['Increase'].count()
+
+    # Calculate the ratio
+    ratio = increases_after_n_increases / decreases_after_n_increases if decreases_after_n_increases != 0 else float('inf')
+
+    return increases_after_n_increases, decreases_after_n_increases, ratio
+# symbol = 'SPY'
+# n = 9
+# increases, decreases, ratio = analyze_post_increase_days(symbol, n)
+# print(f"Number of increases after {n} consecutive increases: {increases}")
+# print(f"Number of decreases after {n} consecutive increases: {decreases}")
+# print(f"Ratio of increases to decreases: {ratio}")
+
+
+
+
+
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def analyze_post_increase_ratios(symbol, max_n, start_date, end_date):
+    stock_data = yf.download(symbol, start=start_date, end=end_date)
+
+    stock_data['Daily_Return'] = stock_data['Close'].pct_change()
+    stock_data['Increase'] = stock_data['Daily_Return'] > 0
+    ratios = []
+    counts = []  # To store the number of data points for each n
+
+    for n in range(1, max_n + 1):
+        stock_data['Consecutive_Increases'] = stock_data['Increase'].rolling(window=n).sum() == n
+        stock_data['Prev_Consecutive_Increases'] = stock_data['Consecutive_Increases'].shift(-n)
+
+        increases = stock_data[stock_data['Prev_Consecutive_Increases'] & stock_data['Increase']]['Increase'].count()
+        decreases = stock_data[stock_data['Prev_Consecutive_Increases'] & ~stock_data['Increase']]['Increase'].count()
+
+        ratio = increases / decreases if decreases != 0 else float('inf')
+        ratios.append(ratio)
+        counts.append(stock_data['Consecutive_Increases'].sum())  # Count occurrences
+
+    return ratios, counts
+
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA"]
+stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "TSLA"]
+max_n = 10
+start_date = '2010-01-01'  # Start date for the data
+end_date = '2014-01-01'  # End date for the data
+
+plt.figure(figsize=(12, 8))
+
+# Plotting for each stock
+for stock in stocks:
+    ratios, counts = analyze_post_increase_ratios(stock, max_n, start_date, end_date)
+    n_values = range(1, max_n + 1)
+    plt.plot(n_values, ratios, marker='o', linestyle='-', label=stock)
+
+    # Annotating each data point with the count of data points
+    for i, count in enumerate(counts):
+        plt.annotate(str(count), (n_values[i], ratios[i]), textcoords="offset points", xytext=(0,10), ha='center')
+
+plt.xlabel('Consecutive Increase Days (n)')
+plt.ylabel('Ratio of Increases to Decreases')
+plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Increase ({start_date} to {end_date})')
+plt.xticks(range(1, max_n + 1))
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+
+import yfinance as yf
+import pandas as pd
+
+def analyze_post_decrease_days(symbol, n):
+    # Fetch historical stock data
+    stock_data = yf.download(symbol)
+
+    # Calculate daily returns
+    stock_data['Daily_Return'] = stock_data['Close'].pct_change()
+
+    # Identify days with price decrease
+    stock_data['Decrease'] = stock_data['Daily_Return'] < 0
+
+    # Find sequences of n consecutive decreases
+    stock_data['Consecutive_Decreases'] = stock_data['Decrease'].rolling(window=n).sum() == n
+
+    # Shift the consecutive decreases column to align with the next day
+    stock_data['Post_Decrease'] = stock_data['Consecutive_Decreases'].shift(1).fillna(False)
+
+    # Count the number of increases and decreases after n consecutive decreases
+    increases_after_n_decreases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] > 0)].count()['Post_Decrease']
+    decreases_after_n_decreases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] < 0)].count()['Post_Decrease']
+
+    # Calculate the ratio
+    ratio = increases_after_n_decreases / decreases_after_n_decreases if decreases_after_n_decreases != 0 else float('inf')
+
+    return increases_after_n_decreases, decreases_after_n_decreases, ratio
+
+
+# symbol = 'AAPL'
+# n = 2
+# increases, decreases, ratio = analyze_post_decrease_days(symbol, n)
+#
+# print(f"Number of increases after {n} consecutive decreases: {increases}")
+# print(f"Number of decreases after {n} consecutive decreases: {decreases}")
+# print(f"Ratio of increases to decreases: {ratio}")
+
+
+
+
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def analyze_post_decrease_ratios(symbol, max_n):
+    stock_data = yf.download(symbol)
+    stock_data['Daily_Return'] = stock_data['Close'].pct_change()
+    stock_data['Decrease'] = stock_data['Daily_Return'] < 0
+    ratios = []
+
+    for n in range(1, max_n + 1):
+        stock_data['Consecutive_Decreases'] = stock_data['Decrease'].rolling(window=n).sum() == n
+        stock_data['Post_Decrease'] = stock_data['Consecutive_Decreases'].shift(1).fillna(False)
+
+        increases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] > 0)].count()['Post_Decrease']
+        decreases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] < 0)].count()['Post_Decrease']
+
+        ratio = increases / decreases if decreases != 0 else float('inf')
+        ratios.append(ratio)
+
+    return ratios
+
+# # List of stock symbols
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']  # Replace with your desired stock symbols
+# max_n = 10  # Maximum number of consecutive days of decrease
+#
+# plt.figure(figsize=(12, 8))
+#
+# # Plotting for each stock
+# for stock in stocks:
+#     ratios = analyze_post_decrease_ratios(stock, max_n)
+#     plt.plot(range(1, max_n + 1), ratios, marker='o', linestyle='-', label=stock)
+#
+# plt.xlabel('Consecutive Decrease Days (n)')
+# plt.ylabel('Ratio of Increases to Decreases')
+# plt.title('Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease')
+# plt.xticks(range(1, max_n + 1))
+# plt.legend()
+# plt.grid(True)
 # plt.show()
-sns.pairplot(lagged_series[['Lag1','Lag2','Lag3','Lag4','Lag5','Today','Volume']])
+
+
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def analyze_post_decrease_ratios(symbol, max_n, start_date, end_date):
+    stock_data = yf.download(symbol, start=start_date, end=end_date)
+    stock_data['Daily_Return'] = stock_data['Close'].pct_change()
+    stock_data['Decrease'] = stock_data['Daily_Return'] < 0
+    ratios = []
+    counts = []  # To store the count of occurrences for each n
+
+    for n in range(1, max_n + 1):
+        stock_data['Consecutive_Decreases'] = stock_data['Decrease'].rolling(window=n).sum() == n
+        stock_data['Post_Decrease'] = stock_data['Consecutive_Decreases'].shift(1).fillna(False)
+
+        increases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] > 0)].count()['Post_Decrease']
+        decreases = stock_data[stock_data['Post_Decrease'] & (stock_data['Daily_Return'] < 0)].count()['Post_Decrease']
+
+        ratio = increases / decreases if decreases != 0 else float('inf')
+        ratios.append(ratio)
+        counts.append(stock_data['Consecutive_Decreases'].sum())  # Count occurrences
+
+    return ratios, counts
+
+
+# Example usage
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA", "META", "TSLA"] # Replace with your desired stock symbols
+stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "TSLA"] # Replace with your desired stock symbols
+max_n = 10  # Maximum number of consecutive days of decrease
+start_date = '2010-01-01'  # Start date for the data
+end_date = '2014-01-01'  # End date for the data
+
+plt.figure(figsize=(12, 8))
+
+# Plotting for each stock
+for stock in stocks:
+    ratios, counts = analyze_post_decrease_ratios(stock, max_n, start_date, end_date)
+    n_values = range(1, max_n + 1)
+    plt.plot(n_values, ratios, marker='o', linestyle='-', label=stock)
+
+    # Annotating each data point with the count of occurrences
+    for i, count in enumerate(counts):
+        plt.annotate(str(count), (n_values[i], ratios[i]), textcoords="offset points", xytext=(0, 10), ha='center')
+
+plt.xlabel('Consecutive Decrease Days (n)')
+plt.ylabel('Ratio of Increases to Decreases')
+plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease ({start_date} to {end_date})')
+plt.xticks(range(1, max_n + 1))
+plt.legend()
+plt.grid(True)
 plt.show()
 
-# Dimensionality Reduction
-from sklearn.decomposition import PCA
 
-pca = PCA()
-reduced = pca.fit(lagged_series)
-plt.plot(range(1, len(pca.explained_variance_ratio_) + 1), 
-         pca.explained_variance_ratio_.cumsum(), marker='o')
-plt.show()
 
-# Homogeneity 
-# Target variable distribution
-sns.histplot(lagged_series['Direction'])
-plt.show()
-# Feature variable distribution
-sns.histplot(data=lagged_series, x='Lag1', kde=True, label='Lag 1', alpha=0.5)
-plt.show()
-sns.histplot(data=lagged_series, x='Lag2', kde=True, label='Lag 1', alpha=0.5)
-plt.show()
-sns.histplot(data=lagged_series, x='Lag3', kde=True, label='Lag 1', alpha=0.5)
-plt.show()
 
-# Class Balance
-sns.countplot(x='Lag1')
-plt.show()
+
+
+
 
 # Data Clustering
 from sklearn.cluster import KMeans

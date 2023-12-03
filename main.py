@@ -97,14 +97,15 @@ class RiskLevelApp(App):
         # model_name = "Random Forests"
         model_name = "Sequential"
 
-        start_train_date, end_train_date, start_test_date = datetime.datetime(2014, 1, 10) , datetime.datetime(2015, 1, 10) , datetime.datetime(2015, 1, 11)
+        start_train_date, end_train_date, start_test_date, end_test_date = datetime.datetime(2010, 1, 10) , datetime.datetime(2014, 1, 10) ,\
+                                                            datetime.datetime(2014, 1, 11), datetime.datetime(2018, 1, 11)
 
 
-        if not model_name=="Statistical":
-            trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
+        if model_name=="Statistical" or model_name == "Confident Keen Logistic Regression":
+            trade_volume = 100 + (1000000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
 
         else:
-            trade_volume = 100 + (1000000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
+            trade_volume = 100 + (1000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
 
         # Get the optimal allocation ratios suggested by the beta model
         weights = beta_model(self.stock_symbols)
@@ -124,7 +125,8 @@ class RiskLevelApp(App):
             if not _initial_capital == 0:
                 total_gain, returns, equity_curve, drawdown = run_snp_forecast(_symbol_list,
                                                                                _initial_capital, round(_trade_volume),
-                                                                               model_name, start_train_date, end_train_date, start_test_date)
+                                                                               model_name, start_train_date, end_train_date,
+                                                                               start_test_date, end_test_date)
 
                 returns_numpy = returns.to_numpy()
                 equity_curve_numpy = equity_curve.to_numpy()
@@ -153,9 +155,11 @@ class RiskLevelApp(App):
 
 
             df = pd.read_csv(f'data/{self.stock_symbols[i]}.csv')
-            threshold_datetime = start_test_date
+            threshold_start = start_test_date
+            threshold_end = end_test_date
             df['datetime'] = pd.to_datetime(df['datetime'])
-            df = df[df['datetime'] > threshold_datetime]
+            df = df[df['datetime'] > threshold_start]
+            df = df[df['datetime'] < threshold_end]
 
             stock_close = df['adj_close'].to_numpy()
 
