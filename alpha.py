@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 import xgboost as xgb
 
 from keras import Sequential
-from keras import layers
+from keras import layers, regularizers
 from strategy import Strategy
 from event import SignalEvent
 from backtest import Backtest
@@ -154,23 +154,26 @@ class SPYDailyForecastStrategy(Strategy):
             model = Sequential([
                 # dense layers used for feedforward neural network
                 # input shape with 64 neurons, ReLU activation function - ouputs input directly if positive, otherwise output is zero
-                layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+                layers.Dense(16, activation='relu', kernel_regularizer=regularizers.l1(0.01), input_shape=(X_train.shape[1],)),
+                # drops half of the input units during training
+                # layers.Dropout(0.5),
                 # hidden layer with 32 neurons and ReLU activation function - used for learning patterns and representations in the data
-                layers.Dense(32, activation='relu'),
+                layers.Dense(8, activation='relu', kernel_regularizer=regularizers.l1(0.01),),
+                # layers.Dropout(0.5),
                 # output later with one neuron and sigmoid activation function - sigmoid commonly used in binary classigication - produces probability score. 
-                layers.Dense(1, activation='sigmoid')
+                layers.Dense(1, activation='tanh')
             ])
 
             # Adam optimizer combines RMSprop and momentum - faster convergence. two moving averages that are updated with moving average on squared and original gradients. (average of squared gradients = learning rate)
             # binary crossentropy measures difference between predicted and true probability distributiion
             model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
-            # optimizers tried: sgd, adam, adagrad
-            model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+            # optimizers tried: sgd, adam, adagrad, tanh. realized tanh was the one we need to use bc it produces classification vals between -1 and 1 which we need to pass into backtesting
+            # model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
 
         # model = SVC()
         # model = LogisticRegression()
         if self.model_name == "Sequential":
-            model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+            model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_test, y_test))
         else:
             model.fit(X_train, y_train)
         return model
