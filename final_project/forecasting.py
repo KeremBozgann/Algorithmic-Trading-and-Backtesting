@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import sys
 import xgboost as xgb
+import seaborn as sns
 
 # from forecast import create_lagged_series
 from sklearn.tree import DecisionTreeClassifier
@@ -14,6 +15,11 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
+from keras import Sequential
+from keras import layers, regularizers
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
 
 # from sklearn.utils import MovingAverage
 from sklearn.linear_model import Perceptron
@@ -102,7 +108,7 @@ test_ratio = 0.0
 
 # symbol = "AAPL"
 # symbol = "AMZN"
-symbol = "TSLA"
+symbol = "AAPL"
 
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
@@ -129,12 +135,88 @@ for symbol_keen_perc in symbol_list_keen_perc:
     y_test_keen_perc_list.append(y_test)
 
 
+model_perc = LogisticRegression(fit_intercept = True)
+model_keen_perc = LogisticRegression(fit_intercept = True)
 # your model goes here.
 #model = QDA()
 params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
-model = xgb.XGBRFClassifier(**params)
+model = xgb.XGBClassifier(**params)
 y_train[y_train==-1] = 0
+model = QDA()
 model.fit(X_train, y_train)
+
+# y_pred = model.predict(X_val)
+# print(y_pred)
+# y_true = y_val
+# class_labels = [-1, 1]
+
+# conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
+# print(conf_mat)
+# print(accuracy_score(y_true,y_pred))
+# sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
+# plt.title('Confusion Matrix')
+# plt.xlabel('Predicted')
+# plt.ylabel('True')
+# plt.show()
+
+
+
+# normalizing the data
+seed_value = 77
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.fit_transform(X_val)
+
+model = Sequential([
+    # dense layers used for feedforward neural network
+    # input shape with 64 neurons, ReLU activation function - ouputs input directly if positive, otherwise output is zero
+    layers.Dense(16, activation='relu', kernel_regularizer=regularizers.l1(0.01), input_shape=(X_train.shape[1],)),
+    # drops half of the input units during training
+    # layers.Dropout(0.5),
+    # hidden layer with 32 neurons and ReLU activation function - used for learning patterns and representations in the data
+    layers.Dense(8, activation='relu', kernel_regularizer=regularizers.l1(0.01),),
+    # layers.Dropout(0.5),
+    # output later with one neuron and sigmoid activation function - sigmoid commonly used in binary classigication - produces probability score. 
+    layers.Dense(1, activation='tanh')
+])
+
+
+# print("!!!!!!!!!!!!!!!!!!!!",X_test,"!!!!!!!!")
+# print("!!!!!!",y_test,"!!!!!!!!!")
+# Adam optimizer combines RMSprop and momentum - faster convergence. two moving averages that are updated with moving average on squared and original gradients. (average of squared gradients = learning rate)
+# binary crossentropy measures difference between predicted and true probability distributiion
+model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+# optimizers tried: sgd, adam, adagrad. adam had best equity curve
+# model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val))
+
+model_fit = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
+
+y_true = np.argmax(y_val)
+y_pred = model.predict(X_val)
+# for array in y_pred:
+#     print(y_pred)
+y_pred = np.where(y_pred > 0, 1, -1)
+y_pred = y_pred.flatten()
+y_pred = pd.Series(y_pred, name = "Predicted")
+print(y_pred)
+y_true = pd.Series(y_val, name = "Actual")
+y_true = y_true.reset_index(drop=True)
+print(y_true)
+
+
+class_labels = [-1, 1]
+
+conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
+print(conf_mat)
+print(accuracy_score(y_true,y_pred))
+
+sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
+
+
 
 # model = LDA()
 # model = SVC()
