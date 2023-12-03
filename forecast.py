@@ -72,6 +72,7 @@ def create_lagged_series(symbol, start_date, end_date, lags=5):
     tsret['datetime'] = ts['datetime']
     tsret.set_index('datetime', inplace=True)
     tsret.index = pd.to_datetime(tsret.index)
+
     tsret = tsret[tsret.index >= start_date]
     tsret = tsret.iloc[lags+1:]
     return tsret

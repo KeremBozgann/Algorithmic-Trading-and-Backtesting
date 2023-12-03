@@ -88,7 +88,7 @@ def fetch_and_plot_scaled_stocks(symbols, start_date, end_date):
     plt.tight_layout()
     plt.show()
 
-fetch_and_plot_scaled_stocks(["BA", "WMT", "GOOGL"], "2004-11-10", "2004-11-30")
+# fetch_and_plot_scaled_stocks(["BA", "WMT", "GOOGL"], "2004-11-10", "2004-11-30")
 
 
 def fetch_and_plot_long_term_scaled_stocks(symbols, start_date, end_date):
@@ -124,8 +124,8 @@ def fetch_and_plot_long_term_scaled_stocks(symbols, start_date, end_date):
     plt.tight_layout()
     plt.show()
 
-# Example usage - adjust symbols and date range as needed
-fetch_and_plot_long_term_scaled_stocks(["BA", "WMT", "GOOGL"], "2010-01-01", "2010-05-31")
+# # Example usage - adjust symbols and date range as needed
+# fetch_and_plot_long_term_scaled_stocks(["BA", "WMT", "GOOGL"], "2010-01-01", "2010-05-31")
 
 
 
@@ -160,14 +160,12 @@ def analyze_post_increase_days(symbol, n):
     ratio = increases_after_n_increases / decreases_after_n_increases if decreases_after_n_increases != 0 else float('inf')
 
     return increases_after_n_increases, decreases_after_n_increases, ratio
-
-
-symbol = 'SPY'
-n = 9
-increases, decreases, ratio = analyze_post_increase_days(symbol, n)
-print(f"Number of increases after {n} consecutive increases: {increases}")
-print(f"Number of decreases after {n} consecutive increases: {decreases}")
-print(f"Ratio of increases to decreases: {ratio}")
+# symbol = 'SPY'
+# n = 9
+# increases, decreases, ratio = analyze_post_increase_days(symbol, n)
+# print(f"Number of increases after {n} consecutive increases: {increases}")
+# print(f"Number of decreases after {n} consecutive increases: {decreases}")
+# print(f"Ratio of increases to decreases: {ratio}")
 
 
 
@@ -198,7 +196,8 @@ def analyze_post_increase_ratios(symbol, max_n, start_date, end_date):
 
     return ratios, counts
 
-stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA"]
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA"]
+stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "TSLA"]
 max_n = 10
 start_date = '2010-01-01'  # Start date for the data
 end_date = '2014-01-01'  # End date for the data
@@ -255,13 +254,13 @@ def analyze_post_decrease_days(symbol, n):
     return increases_after_n_decreases, decreases_after_n_decreases, ratio
 
 
-symbol = 'AAPL'
-n = 2
-increases, decreases, ratio = analyze_post_decrease_days(symbol, n)
-
-print(f"Number of increases after {n} consecutive decreases: {increases}")
-print(f"Number of decreases after {n} consecutive decreases: {decreases}")
-print(f"Ratio of increases to decreases: {ratio}")
+# symbol = 'AAPL'
+# n = 2
+# increases, decreases, ratio = analyze_post_decrease_days(symbol, n)
+#
+# print(f"Number of increases after {n} consecutive decreases: {increases}")
+# print(f"Number of decreases after {n} consecutive decreases: {decreases}")
+# print(f"Ratio of increases to decreases: {ratio}")
 
 
 
@@ -288,24 +287,25 @@ def analyze_post_decrease_ratios(symbol, max_n):
 
     return ratios
 
-# List of stock symbols
-stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']  # Replace with your desired stock symbols
-max_n = 10  # Maximum number of consecutive days of decrease
+# # List of stock symbols
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']  # Replace with your desired stock symbols
+# max_n = 10  # Maximum number of consecutive days of decrease
+#
+# plt.figure(figsize=(12, 8))
+#
+# # Plotting for each stock
+# for stock in stocks:
+#     ratios = analyze_post_decrease_ratios(stock, max_n)
+#     plt.plot(range(1, max_n + 1), ratios, marker='o', linestyle='-', label=stock)
+#
+# plt.xlabel('Consecutive Decrease Days (n)')
+# plt.ylabel('Ratio of Increases to Decreases')
+# plt.title('Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease')
+# plt.xticks(range(1, max_n + 1))
+# plt.legend()
+# plt.grid(True)
+# plt.show()
 
-plt.figure(figsize=(12, 8))
-
-# Plotting for each stock
-for stock in stocks:
-    ratios = analyze_post_decrease_ratios(stock, max_n)
-    plt.plot(range(1, max_n + 1), ratios, marker='o', linestyle='-', label=stock)
-
-plt.xlabel('Consecutive Decrease Days (n)')
-plt.ylabel('Ratio of Increases to Decreases')
-plt.title('Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease')
-plt.xticks(range(1, max_n + 1))
-plt.legend()
-plt.grid(True)
-plt.show()
 
 import yfinance as yf
 import pandas as pd
@@ -334,7 +334,8 @@ def analyze_post_decrease_ratios(symbol, max_n, start_date, end_date):
 
 
 # Example usage
-stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA", "META", "TSLA"] # Replace with your desired stock symbols
+# stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA", "META", "TSLA"] # Replace with your desired stock symbols
+stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "TSLA"] # Replace with your desired stock symbols
 max_n = 10  # Maximum number of consecutive days of decrease
 start_date = '2010-01-01'  # Start date for the data
 end_date = '2014-01-01'  # End date for the data
@@ -358,3 +359,7 @@ plt.xticks(range(1, max_n + 1))
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
+
+

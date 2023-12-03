@@ -83,8 +83,8 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 
 # lags: number of days we look before the day we want to make a prediction
-lags = 4
-# lags = 5
+# lags = 4
+lags = 5
 
 # train, validation, test data split ratios
 train_ratio = 0.5

@@ -55,38 +55,68 @@ class SPYDailyForecastStrategy(Strategy):
     def create_symbol_forecast_model(self):
 
         # Create a lagged series of the S&P500 US stock market index
-        snpret = create_lagged_series(
-        self.symbol_list[0], self.model_start_date, self.model_end_date, lags = 5
-        )
-        # Use the prior two days of returns as predictor # values, with direction as the response
-        # X = snpret[["Lag1", "Lag2"]]
-        X = snpret[["Lag1", "Lag2", "Lag3", "Lag4", "Lag5"]]
-        # X = snpret[["Lag1", "Lag2"]]
-
-        y = snpret["Direction"]
-        # Create training and test sets
-
-        # start_test = self.model_start_test_date
-
-
-        # start_test = snpret.index[0] +  pd.DateOffset(years=3)
-        start_test =  self.model_start_test_date
-
-        X.index = pd.to_datetime(X.index)
-        y.index = pd.to_datetime(y.index)
-
-        X_train = X[X.index < start_test]
-        X_train = np.flip(X_train.to_numpy(),axis= 1)
-        X_test = X[X.index >= start_test]
-        X_test=  np.flip(X_test.to_numpy(), axis = 1)
-        y_train = y[y.index < start_test]
-        y_train = y_train.to_numpy()
-        y_test = y[y.index >= start_test]
-        y_test = y_test.to_numpy()
-
-        if self.model_name == "Statistical":
+        if self.model_name ==  "Statistical":
             return
+        elif self.model_name ==  "Confident Keen Logistic Regression":
+            snpret = create_lagged_series(
+                self.symbol_list[0], self.model_start_date, self.model_end_date, lags=4
+            )
+            X = snpret[["Lag1", "Lag2", "Lag3", "Lag4"]]
+            y = snpret["Direction"]
+            start_test = self.model_start_test_date
+
+            X.index = pd.to_datetime(X.index)
+            y.index = pd.to_datetime(y.index)
+
+            X_train = X[X.index < start_test]
+            X_train = np.flip(X_train.to_numpy(), axis=1)
+            X_test = X[X.index >= start_test]
+            X_test = np.flip(X_test.to_numpy(), axis=1)
+            y_train = y[y.index < start_test]
+            y_train = y_train.to_numpy()
+            y_test = y[y.index >= start_test]
+            y_test = y_test.to_numpy()
+
+
+            is_negative = (X_train < 0).all(axis=1)
+            X_train_consec_neg = X_train[is_negative]
+            y_train_consec_neg = y_train[is_negative]
+
+            model_keen_log = LogisticRegression(fit_intercept=True)
+
+            model_keen_log.fit(X_train_consec_neg, y_train_consec_neg)
+
+            return model_keen_log
         else:
+            snpret = create_lagged_series(
+            self.symbol_list[0], self.model_start_date, self.model_end_date, lags = 5
+            )
+            # Use the prior two days of returns as predictor # values, with direction as the response
+            # X = snpret[["Lag1", "Lag2"]]
+            X = snpret[["Lag1", "Lag2", "Lag3", "Lag4", "Lag5"]]
+            # X = snpret[["Lag1", "Lag2"]]
+
+            y = snpret["Direction"]
+            # Create training and test sets
+
+            # start_test = self.model_start_test_date
+
+
+            # start_test = snpret.index[0] +  pd.DateOffset(years=3)
+            start_test =  self.model_start_test_date
+
+            X.index = pd.to_datetime(X.index)
+            y.index = pd.to_datetime(y.index)
+
+            X_train = X[X.index < start_test]
+            X_train = np.flip(X_train.to_numpy(),axis= 1)
+            X_test = X[X.index >= start_test]
+            X_test=  np.flip(X_test.to_numpy(), axis = 1)
+            y_train = y[y.index < start_test]
+            y_train = y_train.to_numpy()
+            y_test = y[y.index >= start_test]
+            y_test = y_test.to_numpy()
+
             if self.model_name == "QDA":
                 model = QDA()
 
@@ -155,6 +185,22 @@ class SPYDailyForecastStrategy(Strategy):
                             self.flag_buy_and_sell = True
                             signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
                             self.events.put(signal)
+
+                elif self.model_name ==  "Confident Keen Logistic Regression":
+                    if self.flag_buy_and_sell:
+                        signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
+                        self.events.put(signal)
+                        self.flag_buy_and_sell = False
+                    else:
+                        if np.all(pred_series.values.reshape(1, -1)[-4:] < 0):
+                            pred_prob = self.model.predict_proba(pred_series.values[1:].reshape(1, -1))
+                            pred_inc = pred_prob[0, 1]
+                            if pred_inc > 0.6:
+                                pred = 1
+                                self.flag_buy_and_sell = True
+                                signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
+                                self.events.put(signal)
+
 
                 else:
                     pred = self.model.predict(pred_series.values.reshape(1,-1))
@@ -327,7 +373,8 @@ if __name__ == "__main__":
     )
     backtest.simulate_trading()
 
-def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name, start_train_date, end_train_date, start_test_date):
+def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name, start_train_date, end_train_date, start_test_date
+                     ,end_test_date):
     csv_dir = 'data'  # CHANGE THIS!
     # symbol_list = ['SPY']
     # initial_capital = 100000.0
@@ -341,7 +388,7 @@ def run_snp_forecast(symbol_list, initial_capital, trade_volume, model_name, sta
     backtest = Backtest(
         csv_dir, symbol_list, initial_capital, heartbeat,
         start_date, HistoricCSVDataHandler, SimulatedExecutionHandler, Portfolio, SPYDailyForecastStrategy, model_name,
-        start_train_date, end_train_date, start_test_date
+        start_train_date, end_train_date, start_test_date, end_test_date
     )
     total_gain , returns, equity_curve, drawdown = backtest.simulate_trading(trade_volume)
 
