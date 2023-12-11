@@ -1,4 +1,18 @@
 
+Python Dependencies:
+    - numpy
+    - pandas
+    - pandas_datareader (pip install pandas_datareader)
+    - yfinance
+    - scikit-learn
+    - matplotlib
+    - xgboost
+    - tensorflow
+    - keras
+    - seaborn
+    - PyPortfolioOpt
+
+
 Instructions to reproduce the equity curves in the final report:
  1) Go to "main.py" file
  2) Set "model_name" to desired alpha model
