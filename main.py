@@ -20,7 +20,7 @@ selected_risk = 50
 stock_symbols = ['aapl'] # Choose from the following: 'spy', 'msft', 'amzn', tsla', 'googl', 'meta'
 
 #initial capital. The number of stocks exchanged is proportinal to the initial capital. Unit: Dollars
-initial_capital = 10000
+initial_capital = 100000
 
 # model_name = "LDA"
 # model_name = "QDA"
@@ -55,8 +55,7 @@ print('model name: ', model_name)
 # they trade on less number of days
 if model_name=="Rule Based" or model_name == "Confident Logistic Regression" or \
     model_name == "Logistic Regression with Sum of Percentage Change Input":
-    # trade_volume = 100 + (1000000 - 100)/100 *  selected_risk * initial_capital / 10000
-    trade_volume = 100 + (10000 - 100)/100 *  selected_risk * initial_capital / 10000
+    trade_volume = 100 + (1000000 - 100)/100 *  selected_risk * initial_capital / 10000
 
 else:
     trade_volume = 100 + (10000 - 100)/100 *  selected_risk * initial_capital / 10000
