@@ -5,7 +5,6 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.scrollview import ScrollView
-import fitz  # Import pyMuPDF
 
 class PDFNoteTakerApp(App):
     def build(self):

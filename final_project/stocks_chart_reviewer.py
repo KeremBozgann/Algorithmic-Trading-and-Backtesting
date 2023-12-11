@@ -2,32 +2,20 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-def fetch_and_plot_one_stock(symbol, start_date, end_date):
-    stock_data = yf.download(symbol, start=start_date, end=end_date)
-
-    if stock_data.empty:
-        print("No data found for the given symbol and date range.")
-        return
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(stock_data.index, stock_data['Close'], marker='o', linestyle='-')
-
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    ax.grid(True)
-
-    plt.xlabel("Date")
-    plt.ylabel("Close Price (USD)")
-    plt.title(f"{symbol} Stock Price")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-# fetch_and_plot_one_stock("BA", "2017-01-4", "2017-02-25")  # A shorter range is used for better visibility
-# fetch_and_plot_one_stock("AAPL",  "2017-01-4", "2017-02-25")   # A shorter range is used for better visibility
 
 
+from matplotlib import rc,rcParams
+rc('text', usetex=True)
+rc('axes', linewidth=2)
+rc('font', weight='bold')
 
+linewidth = 4
+font_ax = 20
+font_leg = 20
+font_ticks=  18
+
+
+# Get the stock chart
 def fetch_and_plot_stocks(symbols, start_date, end_date):
     plt.figure(figsize=(12, 6))
 
@@ -58,10 +46,8 @@ def fetch_and_plot_stocks(symbols, start_date, end_date):
 
 
 
-import yfinance as yf
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
+# Get the scaled stock chart (scaled the stocks)
 def fetch_and_plot_scaled_stocks(symbols, start_date, end_date):
     plt.figure(figsize=(12, 6))
 
@@ -91,31 +77,29 @@ def fetch_and_plot_scaled_stocks(symbols, start_date, end_date):
 # fetch_and_plot_scaled_stocks(["BA", "WMT", "GOOGL"], "2004-11-10", "2004-11-30")
 
 
+# For long term visualization
 def fetch_and_plot_long_term_scaled_stocks(symbols, start_date, end_date):
     plt.figure(figsize=(12, 6))
 
     for symbol in symbols:
-        # Fetch stock data
+        # fetch stock data
         stock_data = yf.download(symbol, start=start_date, end=end_date)
 
-        # Check if data is empty
+        # check if data is empty
         if stock_data.empty:
             print(f"No data found for {symbol} in the given date range.")
             continue
 
-        # Scale the stock prices to start at zero and show relative change
+        # scale the stock prices to start at zero and show relative change
         scaled_prices = (stock_data['Close'] - stock_data['Close'].iloc[0]) / stock_data['Close'].iloc[0]
 
-        # Plotting the scaled stock data
         plt.plot(stock_data.index, scaled_prices, marker='', linestyle='-', label=symbol)
 
-    # Formatting date on the x-axis
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
     plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=6))  # Set interval to every 6 months
 
     plt.grid(True)
 
-    # Setting labels and title
     plt.xlabel("Date")
     plt.ylabel("Relative Price Change")
     plt.title("Long Term Scaled Stock Prices")
@@ -124,17 +108,12 @@ def fetch_and_plot_long_term_scaled_stocks(symbols, start_date, end_date):
     plt.tight_layout()
     plt.show()
 
-# # Example usage - adjust symbols and date range as needed
 # fetch_and_plot_long_term_scaled_stocks(["BA", "WMT", "GOOGL"], "2010-01-01", "2010-05-31")
 
 
 
 
-
-
-import yfinance as yf
-import pandas as pd
-
+# Get the number of increase vs. decrease days following an increase trend
 def analyze_post_increase_days(symbol, n):
     # Fetch historical stock data
     stock_data = yf.download(symbol)
@@ -168,15 +147,7 @@ def analyze_post_increase_days(symbol, n):
 # print(f"Ratio of increases to decreases: {ratio}")
 
 
-
-
-
-
-
-
-import yfinance as yf
-import pandas as pd
-
+# Get the number of increase vs. decrease days following an decrease trend
 def analyze_post_decrease_days(symbol, n):
     # Fetch historical stock data
     stock_data = yf.download(symbol)
@@ -213,11 +184,7 @@ def analyze_post_decrease_days(symbol, n):
 
 
 
-
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
-
+# Plot the ratio of increases to decreases vs. the number of consecutive decrease days
 def analyze_post_decrease_ratios(symbol, max_n):
     stock_data = yf.download(symbol)
     stock_data['Daily_Return'] = stock_data['Close'].pct_change()
@@ -258,21 +225,7 @@ def analyze_post_decrease_ratios(symbol, max_n):
 
 
 
-
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-from matplotlib import rc,rcParams
-rc('text', usetex=True)
-rc('axes', linewidth=2)
-rc('font', weight='bold')
-
-linewidth = 4
-font_ax = 20
-font_leg = 20
-font_ticks=  18
-
+# Plot the ratio of increases to decreases vs. the number of consecutive increase days
 def analyze_post_increase_ratios(symbol, max_n, start_date, end_date):
     stock_data = yf.download(symbol, start=start_date, end=end_date)
 
@@ -309,13 +262,13 @@ plt.xlabel(r'\textbf{Number of Consecutive Increase Days}', fontsize=font_ax)
 plt.ylabel(r'\textbf{Ratio of Increases to Decreases}', fontsize=font_ax)
 plt.title(fr'\textbf{{Stock Price Increase/Decrease Ratio ({start_date} to {end_date})}}', fontsize=font_ax)
 
-# Plotting for each stock
+# plot
 for stock in stocks:
     ratios, counts = analyze_post_increase_ratios(stock, max_n, start_date, end_date)
     n_values = range(1, max_n + 1)
     plt.plot(n_values, ratios, marker='o', linestyle='-', label=stock,  linewidth=linewidth, markersize = 10)
 
-    # Annotating each data point with the count of data points
+    # Annotating each data point with the count of instances in which a consecutive increase trend is observed
     for i, count in enumerate(counts):
         plt.annotate(str(count), (n_values[i], ratios[i]), textcoords="offset points", xytext=(0,10), ha='center')
 
@@ -331,35 +284,17 @@ plt.xticks(fontsize=font_ticks)
 plt.yticks(fontsize=font_ticks)
 plt.legend(fontsize=font_ax)
 plt.ylim(top =6.0)
-
-# plt.ylim(bottom =0.0)
 plt.show()
 
 
 
-
-
-
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib import rc,rcParams
-rc('text', usetex=True)
-rc('axes', linewidth=2)
-rc('font', weight='bold')
-
-linewidth = 4
-font_ax = 20
-font_leg = 20
-font_ticks=  18
-
-
+# Plot the ratio of increases to decreases vs. the number of consecutive decrease days
 def analyze_post_decrease_ratios(symbol, max_n, start_date, end_date):
     stock_data = yf.download(symbol, start=start_date, end=end_date)
     stock_data['Daily_Return'] = stock_data['Close'].pct_change()
     stock_data['Decrease'] = stock_data['Daily_Return'] < 0
     ratios = []
-    counts = []  # To store the count of occurrences for each n
+    counts = []
 
     for n in range(1, max_n + 1):
         stock_data['Consecutive_Decreases'] = stock_data['Decrease'].rolling(window=n).sum() == n
@@ -375,7 +310,6 @@ def analyze_post_decrease_ratios(symbol, max_n, start_date, end_date):
     return ratios, counts
 
 
-# Example usage
 # stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "BA", "META", "TSLA"]
 # stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'SPY', "TSLA"]
 stocks = ['AAPL', 'AMZN', "TSLA", 'MSFT']
@@ -385,7 +319,7 @@ end_date = '2014-01-01'  # End date for the data
 
 plt.figure(figsize=(12, 8))
 
-# Plotting for each stock
+# Plot
 for stock in stocks:
     ratios, counts = analyze_post_decrease_ratios(stock, max_n, start_date, end_date)
     n_values = range(1, max_n + 1)

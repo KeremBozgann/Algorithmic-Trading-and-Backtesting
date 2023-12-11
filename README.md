@@ -1,10 +1,6 @@
 # Algorithmic-Trading-and-Backtesting
-Implementation of a Trading Algorithm that uses a Support Vector Machine (SVN) to predict stock price movements. 
 
-
-Make sure to install the "kivy" package of python before you run the "main.py" file which is used for the User Interface. 
-
-Run "main.py", which is the main file and runs a "QDA" forecaster from the sklearn library for predicting the next day market price of the stock based on past data. 
+Run "main.py", which is the main file and runs a forecaster from the sklearn library for predicting the next day market price of the stock based on past data. 
 
 The algorithm is risk sensitive and user inputs her risk sensitivity via sliding a risk bar in the GUI that is prompted after running the "main.py" file. 
 Note that this is a very simple risk sensitivity model. The risk bar determines the number of stocks that is traded at each transaction, a higher risk corresponding to
