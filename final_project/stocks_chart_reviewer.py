@@ -206,7 +206,7 @@ max_n = 10
 start_date = '2010-01-01'  # Start date for the data
 end_date = '2014-01-01'  # End date for the data
 
-plt.figure(figsize=(12, 8))
+# plt.figure(figsize=(12, 8))
 
 # Plotting for each stock
 for stock in stocks:
@@ -218,13 +218,13 @@ for stock in stocks:
     for i, count in enumerate(counts):
         plt.annotate(str(count), (n_values[i], ratios[i]), textcoords="offset points", xytext=(0,10), ha='center')
 
-plt.xlabel('Consecutive Increase Days (n)')
-plt.ylabel('Ratio of Increases to Decreases')
-plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Increase ({start_date} to {end_date})')
-plt.xticks(range(1, max_n + 1))
-plt.legend()
-plt.grid(True)
-plt.show()
+# plt.xlabel('Consecutive Increase Days (n)')
+# plt.ylabel('Ratio of Increases to Decreases')
+# plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Increase ({start_date} to {end_date})')
+# plt.xticks(range(1, max_n + 1))
+# plt.legend()
+# plt.grid(True)
+# plt.show()
 
 
 
@@ -356,13 +356,13 @@ for stock in stocks:
     for i, count in enumerate(counts):
         plt.annotate(str(count), (n_values[i], ratios[i]), textcoords="offset points", xytext=(0, 10), ha='center')
 
-plt.xlabel('Consecutive Decrease Days (n)')
-plt.ylabel('Ratio of Increases to Decreases')
-plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease ({start_date} to {end_date})')
-plt.xticks(range(1, max_n + 1))
-plt.legend()
-plt.grid(True)
-plt.show()
+# plt.xlabel('Consecutive Decrease Days (n)')
+# plt.ylabel('Ratio of Increases to Decreases')
+# plt.title(f'Stock Price Increase/Decrease Ratio after n Consecutive Days of Decrease ({start_date} to {end_date})')
+# plt.xticks(range(1, max_n + 1))
+# plt.legend()
+# plt.grid(True)
+# plt.show()
 
 
 
@@ -372,10 +372,59 @@ plt.show()
 
 
 # Data Clustering
-from sklearn.cluster import KMeans
+# from sklearn.cluster import KMeans
 
-kmeans = KMeans(n_clusters=3)
-lagged_series['cluster'] = kmeans.fit_predict(lagged_series)
-plt.scatter(lagged_series['Lag1'],lagged_series['Lag2'],lagged_series['Lag3'],
-            lagged_series['Lag4'],lagged_series['Lag5'],c=lagged_series['cluster'],cmap='viridis')
+# kmeans = KMeans(n_clusters=3)
+# lagged_series['cluster'] = kmeans.fit_predict(lagged_series)
+# plt.scatter(lagged_series['Lag1'],lagged_series['Lag2'],lagged_series['Lag3'],
+#             lagged_series['Lag4'],lagged_series['Lag5'],c=lagged_series['cluster'],cmap='viridis')
+# plt.show()
+
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.tsa.seasonal import seasonal_decompose
+ts = yf.download("MSFT", start="2017-01-4", end="2017-02-25")
+print(ts)
+ts = ts['Close']
+figure, (ax1,ax2) = plt.subplots(2,1,figsize=(12,8))
+
+plot_acf(ts,lags=5,ax=ax1)
+ax1.set_title('ACF')
+
+plot_pacf(ts,lags=5,ax=ax2)
+ax2.set_title('PACF')
+# plt.show()
+
+from statsmodels.tsa.stattools import adfuller
+
+results = adfuller(ts)
+
+print('ADF statistic:', results[0])
+print('p-value:', results[1])
+print('critical values:', results[4])
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+decomposition = seasonal_decompose(ts)
+trend = decomposition.trend
+seasonal = decomposition.seasonal
+residual = decomposition.resid
+
+plt.figure(figsize=(12, 8))
+
+plt.subplot(411)
+plt.plot(ts, label='Original')
+plt.legend()
+
+plt.subplot(412)
+plt.plot(trend, label='Trend')
+plt.legend()
+
+plt.subplot(413)
+plt.plot(seasonal, label='Seasonal')
+plt.legend()
+
+plt.subplot(414)
+plt.plot(residual, label='Residual')
+plt.legend()
+
 plt.show()

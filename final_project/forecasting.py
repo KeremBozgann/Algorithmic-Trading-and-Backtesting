@@ -33,7 +33,7 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
     ts = pd.read_csv(path)
 
     ts['datetime'] = pd.to_datetime(ts['datetime'], format='%Y/%m/%d')
-    start_date = '2010/01/01'
+    start_date = '2014/01/01'
     end_date = '2018/01/01'
     start_date = pd.to_datetime(start_date, format='%Y/%m/%d')
     end_date = pd.to_datetime(end_date, format='%Y/%m/%d')
@@ -109,7 +109,7 @@ test_ratio = 0.0
 
 # symbol = "AAPL"
 # symbol = "AMZN"
-symbol = "AAPL"
+symbol = "MSFT"
 
 X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
 
@@ -141,24 +141,24 @@ model_keen_perc = LogisticRegression(fit_intercept = True)
 # your model goes here.
 #model = QDA()
 params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
-# model = xgb.XGBClassifier(**params)
-model = RandomForestClassifier(n_estimators=20, random_state=42)
-# y_train[y_train==-1] = 0
+model = xgb.XGBClassifier(**params)
+# model = RandomForestClassifier(n_estimators=20, random_state=42)
+y_train[y_train==-1] = 0
 # model = QDA()
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_val)
-# y_pred[y_pred==0]=-1
+y_pred[y_pred==0]=-1
 print(y_pred)
 
 y_true = y_val
 class_labels = [-1, 1]
-
+print(X_train)
 conf_mat = confusion_matrix(y_true,y_pred,labels=class_labels)
 print(conf_mat)
 print(accuracy_score(y_true,y_pred))
 sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
-plt.title('Confusion Matrix')
+plt.title('Confusion Matrix for QDA with MSFT stock')
 plt.xlabel('Predicted')
 plt.ylabel('True')
 plt.show()
@@ -215,7 +215,7 @@ model = Sequential([
 # print(accuracy_score(y_true,y_pred))
 
 # sns.heatmap(conf_mat,annot=True,fmt='d',cmap='Oranges',xticklabels=class_labels, yticklabels=class_labels)
-# plt.title('Confusion Matrix')
+# plt.title('Confusion Matrix for Feed Forward Neural Network with AAPL stock')
 # plt.xlabel('Predicted')
 # plt.ylabel('True')
 # plt.show()

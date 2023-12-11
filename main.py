@@ -87,13 +87,13 @@ class RiskLevelApp(App):
         print('selected risk, ', self.selected_risk)
 
 
-        # model_name = "QDA"
+        model_name = "QDA"
         # model_name = "Statistical"
         # model_name = "Keen-Perceptron"
         # model_name = "LDA_BAGG"
         # model_name = "Perceptron"
         # model_name = "Rule Based"
-        model_name = "Gradient Boosting"
+        # model_name = "Gradient Boosting"
         # model_name = "Random Forests"
         # model_name = "Sequential"
 
