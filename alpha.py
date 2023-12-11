@@ -19,11 +19,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 # snp_forecast.py
-
+import xgboost as xgb
 from sklearn.ensemble import BaggingClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import Perceptron
-
 
 
 class SPYDailyForecastStrategy(Strategy):
@@ -55,9 +54,9 @@ class SPYDailyForecastStrategy(Strategy):
     def create_symbol_forecast_model(self):
 
         # Create a lagged series of the S&P500 US stock market index
-        if self.model_name ==  "Statistical":
+        if self.model_name ==  "Rule Based":
             return
-        elif self.model_name ==  "Confident Keen Logistic Regression":
+        elif self.model_name ==  "Confident Logistic Regression":
             snpret = create_lagged_series(
                 self.symbol_list[0], self.model_start_date, self.model_end_date, lags=4
             )
@@ -69,9 +68,43 @@ class SPYDailyForecastStrategy(Strategy):
             y.index = pd.to_datetime(y.index)
 
             X_train = X[X.index < start_test]
-            X_train = np.flip(X_train.to_numpy(), axis=1)
+            X_train = X_train.to_numpy()
             X_test = X[X.index >= start_test]
-            X_test = np.flip(X_test.to_numpy(), axis=1)
+            X_test = X_test.to_numpy()
+            y_train = y[y.index < start_test]
+            y_train = y_train.to_numpy()
+            y_test = y[y.index >= start_test]
+            y_test = y_test.to_numpy()
+
+
+            is_negative = (X_train < 0).all(axis=1)
+            X_train_consec_neg = X_train[is_negative]
+            y_train_consec_neg = y_train[is_negative]
+
+            model_keen_log = LogisticRegression(fit_intercept=True)
+
+            model_keen_log.fit(X_train_consec_neg, y_train_consec_neg)
+
+            return model_keen_log
+
+        elif self.model_name ==  "Logistic Regression with Sum of Percentage Change Input":
+            snpret = create_lagged_series(
+                self.symbol_list[0], self.model_start_date, self.model_end_date, lags=4
+            )
+            X = snpret[["Lag1", "Lag2", "Lag3", "Lag4"]]
+            X['total perc'] = (1 + X['Lag1']/100) * (1 + X['Lag2']/100) * (1 + X['Lag3']/100) * (1 + X['Lag4']/100) - 1
+            X['total perc'] *= 100  # Convert from decimal to percentage
+
+            y = snpret["Direction"]
+            start_test = self.model_start_test_date
+
+            X.index = pd.to_datetime(X.index)
+            y.index = pd.to_datetime(y.index)
+
+            X_train = X[X.index < start_test]
+            X_train = X_train.to_numpy()
+            X_test = X[X.index >= start_test]
+            X_test = X_test.to_numpy()
             y_train = y[y.index < start_test]
             y_train = y_train.to_numpy()
             y_test = y[y.index >= start_test]
@@ -109,9 +142,9 @@ class SPYDailyForecastStrategy(Strategy):
             y.index = pd.to_datetime(y.index)
 
             X_train = X[X.index < start_test]
-            X_train = np.flip(X_train.to_numpy(),axis= 1)
+            X_train =X_train.to_numpy()
             X_test = X[X.index >= start_test]
-            X_test=  np.flip(X_test.to_numpy(), axis = 1)
+            X_test=  X_test.to_numpy()
             y_train = y[y.index < start_test]
             y_train = y_train.to_numpy()
             y_test = y[y.index >= start_test]
@@ -129,6 +162,11 @@ class SPYDailyForecastStrategy(Strategy):
 
             elif self.model_name == "Perceptron":
                 model = Perceptron(fit_intercept = True)
+
+            elif self.model_name == "Gradient Boosting":
+                params = {'objective': 'binary:logistic', 'eval_metric': 'logloss', 'n_estimators': 50}
+                model = xgb.XGBClassifier(**params)
+                y_train[y_train == -1] = 0
 
             model.fit(X_train, y_train)
             return model
@@ -173,7 +211,7 @@ class SPYDailyForecastStrategy(Strategy):
 
                 # pred = self.model.predict(pred_series)
 
-                if self.model_name == "Statistical":
+                if self.model_name == "Rule Based":
                     # pred = self.model.predict(pred_series)
                     if self.flag_buy_and_sell:
                         signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
@@ -181,21 +219,45 @@ class SPYDailyForecastStrategy(Strategy):
                         self.flag_buy_and_sell = False
                     else:
                         if np.all(pred_series.values.reshape(1, -1)[-4:] < 0):
+                        # if np.all(pred_series.values.reshape(1, -1)[0, :4]< 0):
                             pred = 1
                             self.flag_buy_and_sell = True
                             signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
                             self.events.put(signal)
 
-                elif self.model_name ==  "Confident Keen Logistic Regression":
+                elif self.model_name ==  "Confident Logistic Regression":
                     if self.flag_buy_and_sell:
                         signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
                         self.events.put(signal)
                         self.flag_buy_and_sell = False
                     else:
-                        if np.all(pred_series.values.reshape(1, -1)[-4:] < 0):
-                            pred_prob = self.model.predict_proba(pred_series.values[1:].reshape(1, -1))
+                        # if np.all(pred_series.values.reshape(1, -1)[-4:] < 0):
+                        if np.all(pred_series.values.reshape(1, -1)[0, :5]< 0):
+                            pred_prob = self.model.predict_proba(pred_series.values[:4].reshape(1, -1))
                             pred_inc = pred_prob[0, 1]
                             if pred_inc > 0.6:
+                                pred = 1
+                                self.flag_buy_and_sell = True
+                                signal = SignalEvent(1, sym, dt, 'LONG', 1.0)
+                                self.events.put(signal)
+
+                elif  self.model_name ==  "Logistic Regression with Sum of Percentage Change Input":
+                    if self.flag_buy_and_sell:
+                        signal = SignalEvent(1, sym, dt, 'EXIT', 1.0)
+                        self.events.put(signal)
+                        self.flag_buy_and_sell = False
+                    else:
+                        if np.all(pred_series.values.reshape(1, -1)[0, :4] < 0):
+                            # pred_prob = self.model.predict_proba(pred_series.values[1:].reshape(1, -1))
+                            first_4_lags = pred_series.values[:4].reshape(1, -1)
+                            sum = (1 + pred_series['Lag1'] / 100) * (1 + pred_series['Lag2'] / 100) * (1 + pred_series['Lag3'] / 100) * (
+                                        1 + pred_series['Lag4'] / 100) - 1
+                            sum *= 100  # Convert from decimal to percentage
+
+                            sum_added = np.append(first_4_lags, np.array([[sum]]), axis = 1)
+                            pred_prob = self.model.predict_proba(sum_added)
+                            pred_inc = pred_prob[0, 1]
+                            if pred_inc > 0.5:
                                 pred = 1
                                 self.flag_buy_and_sell = True
                                 signal = SignalEvent(1, sym, dt, 'LONG', 1.0)

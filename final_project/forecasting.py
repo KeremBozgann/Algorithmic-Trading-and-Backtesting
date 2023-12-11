@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.linear_model import Perceptron
 
 
-def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
+def create_data(lags, train_ratio, val_ratio, test_ratio, symbol, append_sum):
     sys.path.append('../')
 
     path= os.path.join("..", 'data', symbol+ ".csv")
@@ -57,6 +57,10 @@ def create_data(lags, train_ratio, val_ratio, test_ratio, symbol):
 
 
     X = tsret[[f"Lag{i+1}" for i in range(lags)]]
+    if append_sum:
+        X['total perc'] = (1 + X['Lag1'] / 100) * (1 + X['Lag2'] / 100) * (1 + X['Lag3'] / 100) * (1 + X['Lag4'] / 100) - 1
+        X['total perc'] *= 100
+
     y = tsret["Direction"]
 
     num_data = X.shape[0]
@@ -97,85 +101,148 @@ test_ratio = 0.0
 
 
 
+append_sign = False
+only_sign = False
+append_sum = False
 
 # symbol = "AAPL"
-# symbol = "AMZN"
-symbol = "TSLA"
+symbol = "AMZN"
+# symbol = "TSLA"
 
-X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
+
 
 
 symbol_list_keen_perc =["AAPL", "AMZN",  "TSLA"]
 
-X_train_keen_perc_list = list()
-X_val_keen_perc_list = list()
-X_test_keen_perc_list = list()
+# X_train_keen_perc_list = list()
+X_train_multi_source_list = list()
+# X_val_keen_perc_list = list()
+X_val_multi_source_list = list()
+# X_test_keen_perc_list = list()
+X_test_multi_source_list = list()
 
-y_train_keen_perc_list = list()
-y_val_keen_perc_list = list()
-y_test_keen_perc_list = list()
+# y_train_keen_perc_list = list()
+y_train_multi_source_list = list()
+# y_val_keen_perc_list = list()
+y_val_multi_source_list = list()
+# y_test_keen_perc_list = list()
+y_test_multi_source_list = list()
 
 for symbol_keen_perc in symbol_list_keen_perc:
-    X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol)
+    X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol, append_sum)
 
-    X_train_keen_perc_list.append(X_train)
-    X_val_keen_perc_list.append(X_val)
-    X_test_keen_perc_list.append(X_test)
+    X_train_multi_source_list.append(X_train)
+    X_val_multi_source_list.append(X_val)
+    X_test_multi_source_list.append(X_test)
 
-    y_train_keen_perc_list.append(y_train)
-    y_val_keen_perc_list.append(y_val)
-    y_test_keen_perc_list.append(y_test)
+    y_train_multi_source_list.append(y_train)
+    y_val_multi_source_list.append(y_val)
+    y_test_multi_source_list.append(y_test)
+
 
 
 # your model goes here.
 # model = QDA()
 
-model_perc = LogisticRegression(fit_intercept = True)
-model_keen_perc = LogisticRegression(fit_intercept = True)
+model_log = LogisticRegression(fit_intercept = True)
+model_multi_source_log = LogisticRegression(fit_intercept = True)
 # model = LDA()
 # model = SVC()
 # model = LogisticRegression()
 
+X_train, y_train, X_val, y_val, X_test, y_test = create_data(lags, train_ratio, val_ratio, test_ratio, symbol, append_sum)
+if append_sum:
+    X_train_sign = np.sign(X_train.drop('total perc', axis=1))
+    X_val_sign = np.sign(X_val.drop('total perc', axis=1))
+    is_negative = (X_train.drop('total perc', axis=1) < 0).all(axis=1)
+    is_negative_val = (X_val.drop('total perc', axis=1) < 0).all(axis=1)
+else:
+    X_train_sign = np.sign(X_train)
+    X_val_sign = np.sign(X_val)
+    is_negative = (X_train < 0).all(axis=1)
+    is_negative_val = (X_val< 0).all(axis=1)
 
-X_train_sign = np.sign(X_train)
 
-is_negative = (X_train < 0).all(axis=1)
-X_train_consec_neg = X_train[is_negative]
-y_train_consec_neg = y_train[is_negative]
+if append_sign:
+    X_train_consec_neg = np.append(X_train[is_negative], X_train_sign[is_negative], axis=1)
+    y_train_consec_neg = y_train[is_negative]
 
-is_negative_val = (X_val < 0).all(axis=1)
-X_val_consec_neg = X_val[is_negative_val]
-y_val_consec_neg = y_val[is_negative_val]
+    X_val_consec_neg = np.append(X_val[is_negative_val], X_val_sign[is_negative_val] , axis =1)
+    y_val_consec_neg = y_val[is_negative_val]
+
+elif only_sign:
+    X_train_consec_neg = X_train_sign[is_negative]
+    y_train_consec_neg = y_train[is_negative]
+
+    X_val_consec_neg = X_val_sign[is_negative_val]
+    y_val_consec_neg = y_val[is_negative_val]
+else:
+    X_train_consec_neg = X_train[is_negative]
+    y_train_consec_neg = y_train[is_negative]
+
+    if append_sum:
+        is_negative_val = (X_val.drop('total perc', axis=1) < 0).all(axis=1)
+    else:
+        is_negative_val = (X_val < 0).all(axis=1)
+
+    X_val_consec_neg = X_val[is_negative_val]
+    y_val_consec_neg = y_val[is_negative_val]
 
 
 
+if append_sign:
+    X_train_consec_neg_multi_source = np.zeros([0, X_train.shape[1] + lags])
+    X_val_consec_neg_multi_source = np.zeros([0, X_train.shape[1] + lags])
+    # X_test_consec_neg_keen_perc = np.zeros([0, X_train.shape[1] + lags])
+    X_test_consec_neg_multi_source = np.zeros([0, X_train.shape[1] + lags])
+else:
+    # X_train_consec_neg_keen_perc = np.zeros([0,lags])
+    X_train_consec_neg_multi_source = np.zeros([0,X_train.shape[1] ])
+    # X_val_consec_neg_keen_perc= np.zeros([0,lags])
+    X_val_consec_neg_multi_source= np.zeros([0,X_train.shape[1] ])
+    # X_test_consec_neg_keen_perc = np.zeros([0,lags])
+    X_test_consec_neg_multi_source = np.zeros([0,X_train.shape[1] ])
 
-X_train_consec_neg_keen_perc = np.zeros([0,lags])
-X_val_consec_neg_keen_perc= np.zeros([0,lags])
-X_test_consec_neg_keen_perc = np.zeros([0,lags])
 
-y_train_consec_neg_keen_perc = np.zeros([0])
-y_val_consec_neg_keen_perc = np.zeros([0])
-y_test_consec_neg_keen_perc = np.zeros([0])
+# y_train_consec_neg_keen_perc = np.zeros([0])
+y_train_consec_neg_multi_source = np.zeros([0])
+# y_val_consec_neg_keen_perc = np.zeros([0])
+y_val_consec_neg_multi_source = np.zeros([0])
+# y_test_consec_neg_keen_perc = np.zeros([0])
+y_test_consec_neg_multi_source = np.zeros([0])
 
-for i in range(len(X_train_keen_perc_list)):
-    _X_train_keen_perc_sign = np.sign(X_train_keen_perc_list[i])
-    _X_val_keen_perc_sign = np.sign(X_val_keen_perc_list[i])
+for i in range(len(X_train_multi_source_list)):
+    if append_sum:
+        _X_train_multi_source_sign = np.sign(X_train_multi_source_list[i].drop('total perc', axis=1))
+        _X_val_multi_source_sign = np.sign(X_val_multi_source_list[i].drop('total perc', axis=1))
+    else:
+        _X_train_multi_source_sign = np.sign(X_train_multi_source_list[i])
+        _X_val_multi_source_sign = np.sign(X_val_multi_source_list[i])
 
-    is_negative_train_keen_perc = (_X_train_keen_perc_sign < 0).all(axis=1)
-    is_negative_val_keen_perc = (_X_val_keen_perc_sign < 0).all(axis=1)
+    is_negative_train_multi_source = (_X_train_multi_source_sign < 0).all(axis=1)
+    is_negative_val_multi_source = (_X_val_multi_source_sign < 0).all(axis=1)
 
-    _X_train_consec_neg_keen_perc = X_train_keen_perc_list[i][is_negative_train_keen_perc]
-    _X_val_consec_neg_keen_perc = X_val_keen_perc_list[i][is_negative_val_keen_perc]
+    if append_sign:
+        _X_train_consec_neg_multi_source = np.append(X_train_multi_source_list[i][is_negative_train_multi_source],
+                                                  _X_train_multi_source_sign[is_negative_train_multi_source], axis=1)
+        _X_val_consec_neg_multi_source = np.append(X_val_multi_source_list[i][is_negative_val_multi_source],
+                                                _X_val_multi_source_sign[is_negative_val_multi_source], axis=1)
+    elif only_sign:
+        _X_train_consec_neg_multi_source = _X_train_multi_source_sign[is_negative_train_multi_source]
+        _X_val_consec_neg_multi_source = _X_val_multi_source_sign[is_negative_val_multi_source]
 
-    _y_train_consec_neg_keen_perc = y_train_keen_perc_list[i][is_negative_train_keen_perc]
-    _y_val_consec_neg_keen_perc = y_val_keen_perc_list[i][is_negative_val_keen_perc]
+    else:
+        _X_train_consec_neg_multi_source = X_train_multi_source_list[i][is_negative_train_multi_source]
+        _X_val_consec_neg_multi_source = X_val_multi_source_list[i][is_negative_val_multi_source]
 
-    X_train_consec_neg_keen_perc = np.append(X_train_consec_neg_keen_perc, _X_train_consec_neg_keen_perc, axis = 0)
-    X_val_consec_neg_keen_perc = np.append(X_val_consec_neg_keen_perc, _X_val_consec_neg_keen_perc, axis = 0)
+    _y_train_consec_neg_multi_source = y_train_multi_source_list[i][is_negative_train_multi_source]
+    _y_val_consec_neg_multi_source = y_val_multi_source_list[i][is_negative_val_multi_source]
 
-    y_train_consec_neg_keen_perc = np.append(y_train_consec_neg_keen_perc, _y_train_consec_neg_keen_perc)
-    y_val_consec_neg_keen_perc = np.append(y_val_consec_neg_keen_perc, _y_val_consec_neg_keen_perc)
+    X_train_consec_neg_multi_source = np.append(X_train_consec_neg_multi_source, _X_train_consec_neg_multi_source, axis = 0)
+    X_val_consec_neg_multi_source = np.append(X_val_consec_neg_multi_source, _X_val_consec_neg_multi_source, axis = 0)
+
+    y_train_consec_neg_multi_source = np.append(y_train_consec_neg_multi_source, _y_train_consec_neg_multi_source)
+    y_val_consec_neg_multi_source = np.append(y_val_consec_neg_multi_source, _y_val_consec_neg_multi_source)
 
 
 # model.fit(X_train, y_train)
@@ -184,24 +251,32 @@ for i in range(len(X_train_keen_perc_list)):
 # model_perc.fit(X_train, y_train)
 # model_perc.partial_fit(X_train_consec_neg, y_train_consec_neg)
 
-model_perc.fit(X_train_consec_neg, y_train_consec_neg)
-y_val_consec_neg_pred =model_perc.predict(X_val_consec_neg)
+model_log.fit(X_train_consec_neg, y_train_consec_neg)
+y_val_consec_neg_pred =model_log.predict(X_val_consec_neg)
 y_val_pred_always_neg = 1 * np.ones([len(y_val_consec_neg.to_numpy())])
 
 
 
-model_keen_perc.fit(X_train_consec_neg_keen_perc, y_train_consec_neg_keen_perc)
-y_val_consec_neg_keen_perc_pred =model_keen_perc.predict(X_val_consec_neg_keen_perc)
-y_val_consec_neg_keen_perc_pred_always_neg = 1 * np.ones([len(y_val_consec_neg_keen_perc)])
+model_multi_source_log.fit(X_train_consec_neg_multi_source, y_train_consec_neg_multi_source)
+y_val_consec_neg_multi_source_pred =model_multi_source_log.predict(X_val_consec_neg)
+y_val_consec_neg_multi_source_pred_always_neg = 1 * np.ones([len(y_val_consec_neg)])
+
+y_val_consec_neg_multi_source_pred_probs =model_multi_source_log.predict_proba(X_val_consec_neg)
+threshold = 0.6
+multi_source_where_confident =(y_val_consec_neg_multi_source_pred_probs[:, 1] > threshold)
 
 
+print("accuracy score Logistic Regression", accuracy_score(y_val_consec_neg_pred, y_val_consec_neg))
+print("accuracy score Multi-Source-Logistic Regression", accuracy_score(y_val_consec_neg_multi_source_pred, y_val_consec_neg))
 
-print("accuracy score Perceptron", accuracy_score(y_val_consec_neg_pred, y_val_consec_neg))
-print("accuracy score Keen-Perceptron", accuracy_score(y_val_consec_neg_keen_perc_pred, y_val_consec_neg_keen_perc))
+print(f"accuracy score Multi-Source-Logistic Regression confident predictions with {threshold} threshold:",
+                    accuracy_score(y_val_consec_neg_multi_source_pred[multi_source_where_confident],
+                                   y_val_consec_neg[multi_source_where_confident]))
 print("accuracy score Rule Based", accuracy_score(y_val_pred_always_neg, y_val_consec_neg))
 
 
-
+print(f"num total consecutive negative instances: {len(y_val_consec_neg_multi_source_pred)}, "
+            f"num consecutive negative instances where model is confident: {np.sum(multi_source_where_confident)}")
 
 #confusion matrix:
 matrix = confusion_matrix(y_val_consec_neg, y_val_consec_neg_pred)

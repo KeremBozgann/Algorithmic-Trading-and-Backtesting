@@ -1,0 +1,1 @@
+- models tested in isolation (in terms of accuracy, isolated from the backtesting (simulation) environment ) in terms of accuracy in forecasting.py

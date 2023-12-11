@@ -88,17 +88,19 @@ class RiskLevelApp(App):
 
 
         # model_name = "LDA"
-        model_name = "Statistical"
-        # model_name = "Confident Keen Logistic Regression"
+        # model_name = "Confident Logistic Regression"
+        # model_name = "Logistic Regression"
+        # model_name = "Logistic Regression with Sum of Percentage Change Input"
         # model_name = "LDA_BAGG"
         # model_name = "Perceptron"
-        # model_name = "Rule Based"
-
-        start_train_date, end_train_date, start_test_date, end_test_date = datetime.datetime(2010, 1, 10) , datetime.datetime(2014, 1, 10) ,\
+        model_name = "Rule Based"
+        # model_name = "Gradient Boosting"
+        start_train_date, end_train_date, start_test_date, end_test_date = datetime.datetime(2004, 1, 10) , datetime.datetime(2014, 1, 10) ,\
                                                             datetime.datetime(2014, 1, 11), datetime.datetime(2018, 1, 11)
 
 
-        if model_name=="Statistical" or model_name == "Confident Keen Logistic Regression":
+        if model_name=="Rule Based" or model_name == "Confident Logistic Regression" or \
+            model_name == "Logistic Regression with Sum of Percentage Change Input":
             trade_volume = 100 + (1000000 - 100)/100 *  self.selected_risk * self.initial_capital / 10000
 
         else:
@@ -207,8 +209,9 @@ class RiskLevelApp(App):
             sum_equity += equity_curve * _initial_capital
             sum_stock += stock_close_rat * _initial_capital
 
-        #
-        # best_stoc = best_stock(self.stock_symbols)
+
+        best_stoc, ind_best = best_stock(self.stock_symbols)
+
         # best_stock_close = df['adj_close'].to_numpy()
         # df_ = pd.read_csv(f'data/{self.stock_symbols[i]}.csv')
         # stock_close = df['adj_close'].to_numpy()
@@ -216,21 +219,38 @@ class RiskLevelApp(App):
         # stock_close_norm = (stock_close - stock_close[0]) / stock_close[0]
         #
         # stock_close_rat = stock_close / stock_close[0]
-        #
-        # total_gain_best, returns_best, equity_curve_best, drawdown_best = run_snp_forecast([best_stoc],
-        #                                                                self.initial_capital, round(trade_volume),
-        #                                                                model_name)
+        stock_best_curve = stock_close_list[ind_best]
+        total_gain_best, returns_best, equity_curve_best, drawdown_best = run_snp_forecast([best_stoc],
+                                                                       self.initial_capital, round(trade_volume),
+                                                                       model_name, start_train_date, end_train_date,
+                                                                                           start_test_date,end_test_date)
+
+
+        from matplotlib import rc, rcParams
+        rc('text', usetex=True)
+        rc('axes', linewidth=2)
+        rc('font', weight='bold')
+
+        linewidth = 4
+        font_ax = 20
+        font_leg = 20
+        font_ticks = 18
 
 
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.plot(sum_equity, label=f"Algo - Combined Stocks - Alpha: {model_name}")
-        ax.plot(sum_stock, label=f"Combined Stocks")  # Plot combined stocks
+        ax.plot(sum_equity, label=f"{model_name}", linewidth=linewidth)
+        # ax.plot(sum_equity, label=f"Algo - Combined Stocks")
+        # ax.plot(sum_equity, label=f"Algo - Combined Stocks")
+        # ax.plot(stock_best_curve * self.initial_capital, label=f"Best Stock")
+        # ax.plot(sum_stock, label=f"Combined Stocks")  # Plot combined stocks
+        ax.plot(sum_stock, label=f"Stock: {self.stock_symbols[0]}", linewidth=linewidth)  # Plot combined stocks
 
         # ax.plot(equity_curve_best.to_numpy() * self.initial_capital, label=f"Algo- Best Stock")  # Plot combined stocks
 
-        plt.xlabel('Time (Days)')
-        plt.ylabel('Equity Curves ($)')
-        plt.title(f'Equity Curve Over Time: Algo vs. {self.stock_symbols[0]}')
+        plt.xlabel(r'\textbf{Time (Days)}')
+        plt.ylabel(r'\textbf{Equity Curves (\$)}')
+        plt.title(fr'\textbf{{Equity Curve Over Time: Algo vs.}} \textbf{{{self.stock_symbols[0]}}}')
+
         plt.legend()  # Include legend
         plt.show()
 

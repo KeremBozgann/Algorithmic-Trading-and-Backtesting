@@ -7,11 +7,11 @@ import numpy as np
 
 '''Mean-Variance Optimization (Markowitz Model)
 Finds the optimal capital allocation that Maximizes the Sharpe ratio'''
-def beta_model(stock_list):
+def beta_model(stock_list, ):
     # stock_list = ['AAPL', 'MSFT', 'GOOG', 'AMZN']
     # data = yf.download(stock_list, start="2010-01-01", end="2020-01-01")['Adj Close']
-    start_date = "2010-01-01"
-    end_date = "2020-01-01"
+    start_date = "2004-01-01"
+    end_date = "2014-01-01"
     all_data = pd.DataFrame()
 
     for stock in stock_list:
@@ -53,4 +53,4 @@ def best_stock(stock_list):
     best_stock = stock_list[np.argmax(mu)]
 
 
-    return best_stock
+    return best_stock, np.argmax(mu)
